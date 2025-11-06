@@ -7,35 +7,20 @@ import os
 # PALETA DE CORES (GFTeam IAPC de Irajá)
 # =====================================================
 COR_FUNDO = "#0e2d26"       # verde escuro do fundo
-COR_PAINEL = "#0a211d"      # verde mais fechado
 COR_TEXTO = "#FFFFFF"       # texto principal
 COR_TEXTO_SUAVE = "#CCCCCC" # texto secundário
 COR_DESTAQUE = "#FFD700"    # dourado dos títulos
 COR_BOTAO = "#078B6C"       # verde dos botões
 COR_HOVER = "#FFD700"       # dourado hover
-COR_ACERTO = "#4CAF50"      # verde de acerto
-COR_ERRO = "#B22222"        # vermelho de erro
 
 # =====================================================
 # CONFIGURAÇÕES DO APP
 # =====================================================
-st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
-
-# Mostra a imagem do topo logo abaixo do título, centralizada
-def mostrar_imagem_topo(caminho):
-    if os.path.exists(caminho):
-        img = Image.open(caminho)
-        largura, altura = img.size
-
-        # Redimensiona de forma proporcional (limite de 700px)
-        if largura > 700:
-            proporcao = 700 / largura
-            nova_altura = int(altura * proporcao)
-            img = img.resize((700, nova_altura))
-        st.image(img, use_column_width=False, caption="", output_format="PNG")
-
-# Exibe a imagem 'topo.webp' se ela existir
-mostrar_imagem_topo("imagens/topo.webp")
+st.set_page_config(
+    page_title="🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá",
+    layout="centered",
+    page_icon="🥋"
+)
 
 # =====================================================
 # ESTILO PERSONALIZADO
@@ -81,21 +66,19 @@ st.markdown(
 # =====================================================
 # FUNÇÃO PARA MOSTRAR IMAGEM AJUSTADA
 # =====================================================
-def mostrar_imagem(caminho):
+def mostrar_imagem(caminho, max_largura=700):
     if os.path.exists(caminho):
         img = Image.open(caminho)
         largura, altura = img.size
 
-        # Mantém proporção e limita largura a 600px
-        if largura > 600:
-            proporcao = 600 / largura
+        if largura > max_largura:
+            proporcao = max_largura / largura
             nova_altura = int(altura * proporcao)
-            img = img.resize((600, nova_altura))
-
-        st.image(img, use_column_width=False, caption="", output_format="PNG")
+            img = img.resize((max_largura, nova_altura))
+        st.image(img, use_column_width=False)
 
 # =====================================================
-# PERGUNTAS POR TEMA E NÍVEL
+# PERGUNTAS POR TEMA
 # =====================================================
 perguntas = {
     "regras": [
@@ -150,7 +133,7 @@ perguntas = {
 }
 
 # =====================================================
-# ESTADOS DO JOGO
+# ESTADO DO JOGO
 # =====================================================
 if "tema" not in st.session_state:
     st.session_state.tema = None
@@ -165,6 +148,7 @@ if "score" not in st.session_state:
 # TELA INICIAL
 # =====================================================
 st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
+mostrar_imagem("imagens/topo.webp", max_largura=700)
 
 if not st.session_state.tema:
     st.subheader("Escolha o tema do seu desafio:")
@@ -187,35 +171,30 @@ tema = st.session_state.tema
 lista_perguntas = [p for p in perguntas[tema] if p["nivel"] == st.session_state.nivel]
 total = len(lista_perguntas)
 
-# Quando termina um nível
+# Fim de um nível
 if st.session_state.indice >= total:
     if st.session_state.nivel < 3:
         st.success(f"🎉 Parabéns! Você completou o Nível {st.session_state.nivel}.")
-        mostrar_imagem("imagens/parabens.png")
+        mostrar_imagem("imagens/parabens.png", max_largura=500)
         if st.button("👉 Avançar para o próximo nível"):
             st.session_state.nivel += 1
             st.session_state.indice = 0
         st.stop()
     else:
         st.balloons()
-        st.markdown(
-            f"<h2>🏁 Fim do jogo!</h2><h3>Você acertou {st.session_state.score} perguntas.</h3>",
-            unsafe_allow_html=True,
-        )
-        mostrar_imagem("imagens/logo_projeto_resgate.png")
+        st.markdown(f"<h2>🏁 Fim do jogo!</h2><h3>Você acertou {st.session_state.score} perguntas!</h3>", unsafe_allow_html=True)
+        mostrar_imagem("imagens/logo_projeto_resgate.png", max_largura=400)
         if st.button("🔁 Jogar novamente"):
             for key in list(st.session_state.keys()):
                 del st.session_state[key]
         st.stop()
 
-# =====================================================
-# EXIBE A PERGUNTA ATUAL
-# =====================================================
+# Pergunta atual
 pergunta_atual = lista_perguntas[st.session_state.indice]
 
 st.markdown(f"### Tema: {tema.capitalize()} | Nível {st.session_state.nivel}")
 st.markdown(f"<div class='question'>{pergunta_atual['pergunta']}</div>", unsafe_allow_html=True)
-mostrar_imagem(pergunta_atual["imagem"])
+mostrar_imagem(pergunta_atual["imagem"], max_largura=500)
 
 opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None, label_visibility="collapsed")
 
