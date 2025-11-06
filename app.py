@@ -87,11 +87,18 @@ st.markdown(
             padding: 15px;
         }}
 
+        /* --- Imagens gerais (mantém sombra leve nas perguntas) --- */
         img {{
             display: block;
             margin: auto;
             border-radius: 10px;
             box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }}
+
+        /* --- Remove sombra e borda arredondada só do topo.webp --- */
+        img[src*="topo.webp"] {{
+            box-shadow: none !important;
+            border-radius: 0 !important;
         }}
 
         .fade {{
@@ -259,3 +266,4 @@ with placeholder.container():
         st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
+
