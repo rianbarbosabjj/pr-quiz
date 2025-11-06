@@ -2,6 +2,7 @@ import streamlit as st
 from PIL import Image
 import random
 import os
+import time
 
 # =====================================================
 # PALETA DE CORES (GFTeam IAPC de Irajá)
@@ -23,40 +24,83 @@ st.set_page_config(
 )
 
 # =====================================================
-# ESTILO PERSONALIZADO
+# CSS MODERNO
 # =====================================================
 st.markdown(
     f"""
     <style>
         .stApp {{
-            background-color: {COR_FUNDO};
+            background: linear-gradient(180deg, #0e2d26 0%, #143d35 100%);
             color: {COR_TEXTO};
+            font-family: 'Poppins', sans-serif;
         }}
-        h1, h2, h3, h4 {{
+
+        h1 {{
             color: {COR_DESTAQUE};
             text-align: center;
-            font-weight: bold;
+            font-size: 44px;
+            font-weight: 800;
+            margin-bottom: 5px;
         }}
+
+        h2 {{
+            text-align: center;
+            color: {COR_TEXTO};
+            font-weight: 400;
+            margin-top: -5px;
+            margin-bottom: 40px;
+        }}
+
         .stButton>button {{
-            background-color: {COR_BOTAO};
+            background: linear-gradient(90deg, {COR_BOTAO} 0%, #00b894 100%);
             color: {COR_TEXTO};
             border: none;
             border-radius: 10px;
-            padding: 12px 28px;
+            padding: 14px 30px;
             font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0px 0px 10px rgba(255, 215, 0, 0.3);
+            font-weight: 700;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+            transition: all 0.3s ease-in-out;
         }}
+
         .stButton>button:hover {{
-            background-color: {COR_HOVER};
+            transform: translateY(-2px);
+            background: linear-gradient(90deg, {COR_HOVER} 0%, #ffd43b 100%);
             color: {COR_FUNDO};
         }}
+
         .question {{
-            font-size: 20px;
+            font-size: 22px;
             text-align: center;
+            font-weight: 500;
             color: {COR_TEXTO};
-            margin-top: 20px;
-            margin-bottom: 15px;
+            padding: 15px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 8px rgba(255,215,0,0.15);
+        }}
+
+        .stRadio > div {{
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+        }}
+
+        img {{
+            display: block;
+            margin: auto;
+            border-radius: 10px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.4);
+        }}
+
+        .fade {{
+            animation: fadeIn 1s ease-in-out;
+        }}
+
+        @keyframes fadeIn {{
+            0% {{opacity: 0; transform: translateY(10px);}}
+            100% {{opacity: 1; transform: translateY(0);}}
         }}
     </style>
     """,
@@ -70,7 +114,6 @@ def mostrar_imagem(caminho, max_largura=700):
     if os.path.exists(caminho):
         img = Image.open(caminho)
         largura, altura = img.size
-
         if largura > max_largura:
             proporcao = max_largura / largura
             nova_altura = int(altura * proporcao)
@@ -147,6 +190,7 @@ if "score" not in st.session_state:
 # =====================================================
 # TELA INICIAL
 # =====================================================
+st.markdown('<div class="fade">', unsafe_allow_html=True)
 st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
 mostrar_imagem("imagens/topo.webp", max_largura=700)
 
@@ -162,6 +206,7 @@ if not st.session_state.tema:
     with col3:
         if st.button("📜 História e Projeto Resgate"):
             st.session_state.tema = "historia"
+    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # =====================================================
@@ -171,40 +216,46 @@ tema = st.session_state.tema
 lista_perguntas = [p for p in perguntas[tema] if p["nivel"] == st.session_state.nivel]
 total = len(lista_perguntas)
 
-# Fim de um nível
-if st.session_state.indice >= total:
-    if st.session_state.nivel < 3:
-        st.success(f"🎉 Parabéns! Você completou o Nível {st.session_state.nivel}.")
-        mostrar_imagem("imagens/parabens.png", max_largura=500)
-        if st.button("👉 Avançar para o próximo nível"):
-            st.session_state.nivel += 1
-            st.session_state.indice = 0
-        st.stop()
-    else:
-        st.balloons()
-        st.markdown(f"<h2>🏁 Fim do jogo!</h2><h3>Você acertou {st.session_state.score} perguntas!</h3>", unsafe_allow_html=True)
-        mostrar_imagem("imagens/logo_projeto_resgate.png", max_largura=400)
-        if st.button("🔁 Jogar novamente"):
-            for key in list(st.session_state.keys()):
-                del st.session_state[key]
-        st.stop()
+placeholder = st.empty()
+with placeholder.container():
+    st.markdown('<div class="fade">', unsafe_allow_html=True)
 
-# Pergunta atual
-pergunta_atual = lista_perguntas[st.session_state.indice]
+    # Quando o nível termina
+    if st.session_state.indice >= total:
+        if st.session_state.nivel < 3:
+            st.success(f"🎉 Parabéns! Você completou o Nível {st.session_state.nivel}.")
+            mostrar_imagem("imagens/parabens.png", max_largura=500)
+            if st.button("👉 Avançar para o próximo nível"):
+                st.session_state.nivel += 1
+                st.session_state.indice = 0
+            st.stop()
+        else:
+            st.balloons()
+            st.markdown(f"<h2>🏁 Fim do jogo!</h2><h3>Você acertou {st.session_state.score} perguntas!</h3>", unsafe_allow_html=True)
+            mostrar_imagem("imagens/logo_projeto_resgate.png", max_largura=400)
+            if st.button("🔁 Jogar novamente"):
+                for key in list(st.session_state.keys()):
+                    del st.session_state[key]
+            st.stop()
 
-st.markdown(f"### Tema: {tema.capitalize()} | Nível {st.session_state.nivel}")
-st.markdown(f"<div class='question'>{pergunta_atual['pergunta']}</div>", unsafe_allow_html=True)
-mostrar_imagem(pergunta_atual["imagem"], max_largura=500)
+    # Exibir pergunta
+    pergunta_atual = lista_perguntas[st.session_state.indice]
+    st.markdown(f"### Tema: {tema.capitalize()} | Nível {st.session_state.nivel}")
+    st.markdown(f"<div class='question'>{pergunta_atual['pergunta']}</div>", unsafe_allow_html=True)
+    mostrar_imagem(pergunta_atual["imagem"], max_largura=500)
 
-opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None, label_visibility="collapsed")
+    opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None, label_visibility="collapsed")
 
-if st.button("Responder"):
-    if not opcao:
-        st.warning("Escolha uma opção antes de continuar!")
-    elif opcao[0] == pergunta_atual["resposta"]:
-        st.success("✅ Correto!")
-        st.session_state.score += 1
-    else:
-        st.error(f"❌ Errado! A resposta certa era {pergunta_atual['resposta']}.")
-    st.session_state.indice += 1
-    st.rerun()
+    if st.button("Responder"):
+        if not opcao:
+            st.warning("Escolha uma opção antes de continuar!")
+        elif opcao[0] == pergunta_atual["resposta"]:
+            st.success("✅ Correto!")
+            st.session_state.score += 1
+        else:
+            st.error(f"❌ Errado! A resposta certa era {pergunta_atual['resposta']}.")
+        time.sleep(0.8)
+        st.session_state.indice += 1
+        st.rerun()
+
+    st.markdown('</div>', unsafe_allow_html=True)
