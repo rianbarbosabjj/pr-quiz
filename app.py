@@ -11,8 +11,6 @@ COR_FUNDO = "#0e2d26"       # verde escuro do fundo
 COR_TEXTO = "#FFFFFF"       # texto principal
 COR_TEXTO_SUAVE = "#CCCCCC" # texto secundário
 COR_DESTAQUE = "#FFD700"    # dourado dos títulos
-COR_BOTAO = "#078B6C"       # verde dos botões
-COR_HOVER = "#FFD700"       # dourado hover
 
 # =====================================================
 # CONFIGURAÇÕES DO APP
@@ -24,7 +22,7 @@ st.set_page_config(
 )
 
 # =====================================================
-# CSS MODERNO
+# CSS ESTILIZADO E MODERNO
 # =====================================================
 st.markdown(
     f"""
@@ -51,24 +49,33 @@ st.markdown(
             margin-bottom: 40px;
         }}
 
+        /* --- Botões Premium --- */
         .stButton>button {{
-            background: linear-gradient(90deg, {COR_BOTAO} 0%, #00b894 100%);
+            background: linear-gradient(135deg, #0fa37f 0%, #0b5c48 100%);
             color: {COR_TEXTO};
             border: none;
-            border-radius: 10px;
-            padding: 14px 30px;
+            border-radius: 12px;
+            padding: 14px 32px;
             font-size: 18px;
             font-weight: 700;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
-            transition: all 0.3s ease-in-out;
+            letter-spacing: 0.5px;
+            box-shadow: 0px 6px 15px rgba(0,0,0,0.25);
+            transition: all 0.25s ease-in-out;
         }}
 
         .stButton>button:hover {{
-            transform: translateY(-2px);
-            background: linear-gradient(90deg, {COR_HOVER} 0%, #ffd43b 100%);
-            color: {COR_FUNDO};
+            transform: translateY(-3px) scale(1.02);
+            background: linear-gradient(135deg, #eac645 0%, #d1a700 100%);
+            color: #0e2d26;
+            box-shadow: 0px 8px 20px rgba(255, 215, 0, 0.3);
         }}
 
+        .stButton>button:active {{
+            transform: scale(0.98);
+            box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
+        }}
+
+        /* --- Perguntas --- */
         .question {{
             font-size: 22px;
             text-align: center;
@@ -87,7 +94,7 @@ st.markdown(
             padding: 15px;
         }}
 
-        /* --- Imagens gerais (mantém sombra leve nas perguntas) --- */
+        /* --- Imagens gerais --- */
         img {{
             display: block;
             margin: auto;
@@ -95,12 +102,22 @@ st.markdown(
             box-shadow: 0 0 15px rgba(0,0,0,0.4);
         }}
 
-        /* --- Remove sombra e borda arredondada só do topo.webp --- */
+        /* --- Remove sombra e borda arredondada do topo --- */
         img[src*="topo.webp"] {{
             box-shadow: none !important;
             border-radius: 0 !important;
         }}
 
+        /* --- Divisor dourado --- */
+        .divider {{
+            width: 80%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, {COR_DESTAQUE}, transparent);
+            margin: 20px auto;
+            border-radius: 5px;
+        }}
+
+        /* --- Animação fade-in --- */
         .fade {{
             animation: fadeIn 1s ease-in-out;
         }}
@@ -115,7 +132,7 @@ st.markdown(
 )
 
 # =====================================================
-# FUNÇÃO PARA MOSTRAR IMAGEM AJUSTADA
+# FUNÇÃO PARA MOSTRAR IMAGEM
 # =====================================================
 def mostrar_imagem(caminho, max_largura=700):
     if os.path.exists(caminho):
@@ -128,7 +145,7 @@ def mostrar_imagem(caminho, max_largura=700):
         st.image(img, use_column_width=False)
 
 # =====================================================
-# PERGUNTAS POR TEMA
+# PERGUNTAS
 # =====================================================
 perguntas = {
     "regras": [
@@ -200,6 +217,7 @@ if "score" not in st.session_state:
 st.markdown('<div class="fade">', unsafe_allow_html=True)
 st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
 mostrar_imagem("imagens/topo.webp", max_largura=700)
+st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
 if not st.session_state.tema:
     st.subheader("Escolha o tema do seu desafio:")
@@ -227,7 +245,6 @@ placeholder = st.empty()
 with placeholder.container():
     st.markdown('<div class="fade">', unsafe_allow_html=True)
 
-    # Quando o nível termina
     if st.session_state.indice >= total:
         if st.session_state.nivel < 3:
             st.success(f"🎉 Parabéns! Você completou o Nível {st.session_state.nivel}.")
@@ -245,7 +262,6 @@ with placeholder.container():
                     del st.session_state[key]
             st.stop()
 
-    # Exibir pergunta
     pergunta_atual = lista_perguntas[st.session_state.indice]
     st.markdown(f"### Tema: {tema.capitalize()} | Nível {st.session_state.nivel}")
     st.markdown(f"<div class='question'>{pergunta_atual['pergunta']}</div>", unsafe_allow_html=True)
@@ -266,4 +282,3 @@ with placeholder.container():
         st.rerun()
 
     st.markdown('</div>', unsafe_allow_html=True)
-
