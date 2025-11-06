@@ -7,13 +7,13 @@ import time
 # =====================================================
 # PALETA DE CORES (GFTeam IAPC de Irajá)
 # =====================================================
-COR_FUNDO = "#0e2d26"       # verde escuro do fundo
-COR_TEXTO = "#FFFFFF"       # texto principal
-COR_TEXTO_SUAVE = "#CCCCCC" # texto secundário
-COR_DESTAQUE = "#FFD700"    # dourado dos títulos
+COR_FUNDO = "#0e2d26"
+COR_TEXTO = "#FFFFFF"
+COR_TEXTO_SUAVE = "#CCCCCC"
+COR_DESTAQUE = "#FFD700"
 
 # =====================================================
-# CONFIGURAÇÕES DO APP
+# CONFIGURAÇÃO DO APP
 # =====================================================
 st.set_page_config(
     page_title="🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá",
@@ -22,117 +22,129 @@ st.set_page_config(
 )
 
 # =====================================================
-# CSS ESTILIZADO E MODERNO
+# TIPOGRAFIA E ESTILO MODERNO
 # =====================================================
-st.markdown(
-    f"""
-    <style>
-        .stApp {{
-            background: linear-gradient(180deg, #0e2d26 0%, #143d35 100%);
-            color: {COR_TEXTO};
-            font-family: 'Poppins', sans-serif;
-        }}
+st.markdown("""
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+""", unsafe_allow_html=True)
 
-        h1 {{
-            color: {COR_DESTAQUE};
-            text-align: center;
-            font-size: 44px;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }}
+st.markdown(f"""
+<style>
+    .stApp {{
+        background: linear-gradient(180deg, #0e2d26 0%, #143d35 100%);
+        color: {COR_TEXTO};
+        font-family: 'Inter', sans-serif;
+    }}
 
-        h2 {{
-            text-align: center;
-            color: {COR_TEXTO};
-            font-weight: 400;
-            margin-top: -5px;
-            margin-bottom: 40px;
-        }}
+    h1 {{
+        font-family: 'Montserrat', sans-serif;
+        color: {COR_DESTAQUE};
+        text-align: center;
+        font-size: 48px;
+        font-weight: 800;
+        text-shadow: 0px 3px 6px rgba(0,0,0,0.3);
+        margin-bottom: 5px;
+        background: linear-gradient(90deg, #eac645, #fff6c5, #eac645);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-size: 200% auto;
+        animation: shine 5s linear infinite;
+    }}
 
-        /* --- Botões Premium --- */
-        .stButton>button {{
-            background: linear-gradient(135deg, #0fa37f 0%, #0b5c48 100%);
-            color: {COR_TEXTO};
-            border: none;
-            border-radius: 12px;
-            padding: 14px 32px;
-            font-size: 18px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            box-shadow: 0px 6px 15px rgba(0,0,0,0.25);
-            transition: all 0.25s ease-in-out;
-        }}
+    @keyframes shine {{
+        to {{ background-position: 200% center; }}
+    }}
 
-        .stButton>button:hover {{
-            transform: translateY(-3px) scale(1.02);
-            background: linear-gradient(135deg, #eac645 0%, #d1a700 100%);
-            color: #0e2d26;
-            box-shadow: 0px 8px 20px rgba(255, 215, 0, 0.3);
-        }}
+    h2 {{
+        text-align: center;
+        color: {COR_TEXTO};
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+        margin-top: -5px;
+        margin-bottom: 40px;
+    }}
 
-        .stButton>button:active {{
-            transform: scale(0.98);
-            box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
-        }}
+    /* Botões premium */
+    .stButton>button {{
+        background: linear-gradient(135deg, #0fa37f 0%, #0b5c48 100%);
+        color: {COR_TEXTO};
+        border: none;
+        border-radius: 14px;
+        padding: 14px 36px;
+        font-size: 17px;
+        font-weight: 700;
+        font-family: 'Montserrat', sans-serif;
+        letter-spacing: 0.6px;
+        box-shadow: 0px 6px 15px rgba(0,0,0,0.25);
+        transition: all 0.25s ease-in-out;
+    }}
 
-        /* --- Perguntas --- */
-        .question {{
-            font-size: 22px;
-            text-align: center;
-            font-weight: 500;
-            color: {COR_TEXTO};
-            padding: 15px;
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 0 8px rgba(255,215,0,0.15);
-        }}
+    .stButton>button:hover {{
+        transform: translateY(-3px) scale(1.03);
+        background: linear-gradient(135deg, #eac645 0%, #d1a700 100%);
+        color: #0e2d26;
+        box-shadow: 0px 8px 20px rgba(255, 215, 0, 0.3);
+    }}
 
-        .stRadio > div {{
-            background-color: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-        }}
+    .stButton>button:active {{
+        transform: scale(0.98);
+        box-shadow: 0px 3px 6px rgba(0,0,0,0.3);
+    }}
 
-        /* --- Imagens gerais --- */
-        img {{
-            display: block;
-            margin: auto;
-            border-radius: 10px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.4);
-        }}
+    /* Perguntas */
+    .question {{
+        font-size: 22px;
+        text-align: center;
+        font-weight: 500;
+        color: {COR_TEXTO};
+        font-family: 'Inter', sans-serif;
+        padding: 20px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        margin-bottom: 25px;
+        box-shadow: 0 0 8px rgba(255,215,0,0.15);
+    }}
 
-        /* --- Remove sombra e borda arredondada do topo --- */
-        img[src*="topo.webp"] {{
-            box-shadow: none !important;
-            border-radius: 0 !important;
-        }}
+    .stRadio > div {{
+        background-color: rgba(255, 255, 255, 0.04);
+        border-radius: 10px;
+        padding: 15px;
+        font-family: 'Inter', sans-serif;
+    }}
 
-        /* --- Divisor dourado --- */
-        .divider {{
-            width: 80%;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, {COR_DESTAQUE}, transparent);
-            margin: 20px auto;
-            border-radius: 5px;
-        }}
+    img {{
+        display: block;
+        margin: auto;
+        border-radius: 10px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }}
 
-        /* --- Animação fade-in --- */
-        .fade {{
-            animation: fadeIn 1s ease-in-out;
-        }}
+    img[src*="topo.webp"] {{
+        box-shadow: none !important;
+        border-radius: 0 !important;
+    }}
 
-        @keyframes fadeIn {{
-            0% {{opacity: 0; transform: translateY(10px);}}
-            100% {{opacity: 1; transform: translateY(0);}}
-        }}
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+    .divider {{
+        width: 80%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, {COR_DESTAQUE}, transparent);
+        margin: 25px auto;
+        border-radius: 5px;
+    }}
+
+    .fade {{
+        animation: fadeIn 1s ease-in-out;
+    }}
+
+    @keyframes fadeIn {{
+        0% {{opacity: 0; transform: translateY(10px);}}
+        100% {{opacity: 1; transform: translateY(0);}}
+    }}
+</style>
+""", unsafe_allow_html=True)
 
 # =====================================================
-# FUNÇÃO PARA MOSTRAR IMAGEM
+# FUNÇÃO PARA EXIBIR IMAGEM
 # =====================================================
 def mostrar_imagem(caminho, max_largura=700):
     if os.path.exists(caminho):
@@ -145,7 +157,7 @@ def mostrar_imagem(caminho, max_largura=700):
         st.image(img, use_column_width=False)
 
 # =====================================================
-# PERGUNTAS
+# PERGUNTAS (resumo funcional)
 # =====================================================
 perguntas = {
     "regras": [
@@ -153,54 +165,16 @@ perguntas = {
          "pergunta": "Quando o árbitro estende o braço à frente e faz movimento vertical em direção ao solo, o que ele indica?",
          "opcoes": ["A) Parar a luta", "B) Início da luta", "C) Punição", "D) Declaração do vencedor"],
          "resposta": "B"},
-        {"nivel": 1, "imagem": "imagens/parar_luta.png",
-         "pergunta": "O que significa o gesto do árbitro?",
-         "opcoes": ["A) Punição", "B) Parar a luta", "C) Ponto para ambos", "D) Desclassificação"],
-         "resposta": "B"},
         {"nivel": 1, "imagem": "imagens/dois_pontos.png",
          "pergunta": "O árbitro ergue dois dedos (indicador e médio). O que significa?",
          "opcoes": ["A) Duas vantagens", "B) Dois pontos (queda, raspagem ou joelho na barriga)",
                     "C) Punição dupla", "D) Pedido de médico"],
-         "resposta": "B"}
-    ],
-    "graduacoes": [
-        {"nivel": 1, "imagem": "imagens/faixas.png",
-         "pergunta": "Qual é a ordem correta das faixas no jiu-jitsu adulto?",
-         "opcoes": ["A) Branca, Azul, Roxa, Marrom, Preta",
-                    "B) Azul, Branca, Roxa, Marrom, Preta",
-                    "C) Branca, Roxa, Azul, Marrom, Preta",
-                    "D) Branca, Azul, Preta, Marrom"],
-         "resposta": "A"},
-        {"nivel": 2, "imagem": "imagens/faixa_preta.png",
-         "pergunta": "Após quantos graus na faixa preta o atleta se torna faixa coral?",
-         "opcoes": ["A) 4º grau", "B) 5º grau", "C) 6º grau", "D) 7º grau"],
-         "resposta": "D"},
-        {"nivel": 3, "imagem": "imagens/faixa_vermelha.png",
-         "pergunta": "A faixa vermelha é atribuída a mestres com quantos anos de prática e contribuição?",
-         "opcoes": ["A) 20 anos", "B) 30 anos", "C) 40 anos", "D) 50 anos"],
-         "resposta": "C"}
-    ],
-    "historia": [
-        {"nivel": 1, "imagem": "imagens/historia_jj.png",
-         "pergunta": "Quem é considerado o introdutor do jiu-jitsu no Brasil?",
-         "opcoes": ["A) Jigoro Kano", "B) Mitsuyo Maeda", "C) Hélio Gracie", "D) Carlos Gracie"],
          "resposta": "B"},
-        {"nivel": 2, "imagem": "imagens/gracie_family.png",
-         "pergunta": "Qual membro da família Gracie é reconhecido por adaptar o jiu-jitsu para pessoas mais leves?",
-         "opcoes": ["A) Hélio Gracie", "B) Rorion Gracie", "C) Rickson Gracie", "D) Royce Gracie"],
-         "resposta": "A"},
-        {"nivel": 3, "imagem": "imagens/projeto_resgate.png",
-         "pergunta": "O Projeto Resgate GFTeam IAPC de Irajá tem como missão:",
-         "opcoes": ["A) Ensinar apenas competição",
-                    "B) Promover o jiu-jitsu como ferramenta de transformação social",
-                    "C) Formar atletas profissionais exclusivamente",
-                    "D) Focar em lutas internacionais"],
-         "resposta": "B"}
     ]
 }
 
 # =====================================================
-# ESTADO DO JOGO
+# ESTADOS DO JOGO
 # =====================================================
 if "tema" not in st.session_state:
     st.session_state.tema = None
@@ -212,7 +186,7 @@ if "score" not in st.session_state:
     st.session_state.score = 0
 
 # =====================================================
-# TELA INICIAL
+# INTERFACE INICIAL
 # =====================================================
 st.markdown('<div class="fade">', unsafe_allow_html=True)
 st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
@@ -231,54 +205,27 @@ if not st.session_state.tema:
     with col3:
         if st.button("📜 História e Projeto Resgate"):
             st.session_state.tema = "historia"
-    st.markdown('</div>', unsafe_allow_html=True)
     st.stop()
 
 # =====================================================
-# QUIZ
+# QUIZ (exemplo funcional)
 # =====================================================
 tema = st.session_state.tema
-lista_perguntas = [p for p in perguntas[tema] if p["nivel"] == st.session_state.nivel]
-total = len(lista_perguntas)
+lista_perguntas = perguntas.get(tema, [])
+if lista_perguntas:
+    p = lista_perguntas[st.session_state.indice % len(lista_perguntas)]
+    st.markdown(f"<div class='question'>{p['pergunta']}</div>", unsafe_allow_html=True)
+    mostrar_imagem(p["imagem"], max_largura=500)
 
-placeholder = st.empty()
-with placeholder.container():
-    st.markdown('<div class="fade">', unsafe_allow_html=True)
-
-    if st.session_state.indice >= total:
-        if st.session_state.nivel < 3:
-            st.success(f"🎉 Parabéns! Você completou o Nível {st.session_state.nivel}.")
-            mostrar_imagem("imagens/parabens.png", max_largura=500)
-            if st.button("👉 Avançar para o próximo nível"):
-                st.session_state.nivel += 1
-                st.session_state.indice = 0
-            st.stop()
-        else:
-            st.balloons()
-            st.markdown(f"<h2>🏁 Fim do jogo!</h2><h3>Você acertou {st.session_state.score} perguntas!</h3>", unsafe_allow_html=True)
-            mostrar_imagem("imagens/logo_projeto_resgate.png", max_largura=400)
-            if st.button("🔁 Jogar novamente"):
-                for key in list(st.session_state.keys()):
-                    del st.session_state[key]
-            st.stop()
-
-    pergunta_atual = lista_perguntas[st.session_state.indice]
-    st.markdown(f"### Tema: {tema.capitalize()} | Nível {st.session_state.nivel}")
-    st.markdown(f"<div class='question'>{pergunta_atual['pergunta']}</div>", unsafe_allow_html=True)
-    mostrar_imagem(pergunta_atual["imagem"], max_largura=500)
-
-    opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None, label_visibility="collapsed")
-
+    opcao = st.radio("Escolha sua resposta:", p["opcoes"], index=None, label_visibility="collapsed")
     if st.button("Responder"):
         if not opcao:
             st.warning("Escolha uma opção antes de continuar!")
-        elif opcao[0] == pergunta_atual["resposta"]:
+        elif opcao[0] == p["resposta"]:
             st.success("✅ Correto!")
             st.session_state.score += 1
         else:
-            st.error(f"❌ Errado! A resposta certa era {pergunta_atual['resposta']}.")
+            st.error(f"❌ Errado! A resposta certa era {p['resposta']}.")
         time.sleep(0.8)
         st.session_state.indice += 1
         st.rerun()
-
-    st.markdown('</div>', unsafe_allow_html=True)
