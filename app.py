@@ -4,38 +4,74 @@ import random
 import os
 
 # =====================================================
-# CONFIGURAÇÕES DE ESTILO E TEMA
+# PALETA DE CORES (GFTeam IAPC de Irajá)
 # =====================================================
-st.set_page_config(
-    page_title="Quiz do Projeto Resgate 🥋",
-    layout="centered",
-    page_icon="🥋"
-)
+COR_FUNDO = "#0e2d26"       # verde escuro do fundo
+COR_PAINEL = "#0a211d"      # verde mais fechado
+COR_TEXTO = "#FFFFFF"       # texto principal
+COR_TEXTO_SUAVE = "#CCCCCC" # texto secundário
+COR_DESTAQUE = "#FFD700"    # dourado dos títulos
+COR_BOTAO = "#078B6C"       # verde dos botões
+COR_HOVER = "#FFD700"       # dourado hover
+COR_ACERTO = "#4CAF50"      # verde de acerto
+COR_ERRO = "#B22222"        # vermelho de erro
 
-COR_FUNDO = "#0e2d26"
-COR_TEXTO = "#FFFFFF"
-COR_DESTAQUE = "#FFD700"
-COR_BOTAO = "#078B6C"
+# =====================================================
+# CONFIGURAÇÕES DO APP
+# =====================================================
+st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
 
+# Mostra a imagem do topo logo abaixo do título, centralizada
+def mostrar_imagem_topo(caminho):
+    if os.path.exists(caminho):
+        img = Image.open(caminho)
+        largura, altura = img.size
+
+        # Redimensiona de forma proporcional (limite de 700px)
+        if largura > 700:
+            proporcao = 700 / largura
+            nova_altura = int(altura * proporcao)
+            img = img.resize((700, nova_altura))
+        st.image(img, use_column_width=False, caption="", output_format="PNG")
+
+# Exibe a imagem 'topo.webp' se ela existir
+mostrar_imagem_topo("imagens/topo.webp")
+
+# =====================================================
+# ESTILO PERSONALIZADO
+# =====================================================
 st.markdown(
     f"""
     <style>
-        body {{
+        .stApp {{
             background-color: {COR_FUNDO};
             color: {COR_TEXTO};
         }}
+        h1, h2, h3, h4 {{
+            color: {COR_DESTAQUE};
+            text-align: center;
+            font-weight: bold;
+        }}
         .stButton>button {{
             background-color: {COR_BOTAO};
-            color: white;
-            border-radius: 10px;
-            padding: 10px 25px;
+            color: {COR_TEXTO};
             border: none;
-            font-weight: bold;
+            border-radius: 10px;
+            padding: 12px 28px;
             font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0px 0px 10px rgba(255, 215, 0, 0.3);
         }}
         .stButton>button:hover {{
-            background-color: {COR_DESTAQUE};
-            color: black;
+            background-color: {COR_HOVER};
+            color: {COR_FUNDO};
+        }}
+        .question {{
+            font-size: 20px;
+            text-align: center;
+            color: {COR_TEXTO};
+            margin-top: 20px;
+            margin-bottom: 15px;
         }}
     </style>
     """,
@@ -43,33 +79,83 @@ st.markdown(
 )
 
 # =====================================================
-# PERGUNTAS POR TEMA
+# FUNÇÃO PARA MOSTRAR IMAGEM AJUSTADA
+# =====================================================
+def mostrar_imagem(caminho):
+    if os.path.exists(caminho):
+        img = Image.open(caminho)
+        largura, altura = img.size
+
+        # Mantém proporção e limita largura a 600px
+        if largura > 600:
+            proporcao = 600 / largura
+            nova_altura = int(altura * proporcao)
+            img = img.resize((600, nova_altura))
+
+        st.image(img, use_column_width=False, caption="", output_format="PNG")
+
+# =====================================================
+# PERGUNTAS POR TEMA E NÍVEL
 # =====================================================
 perguntas = {
     "regras": [
-        {"imagem": "imagens/inicio_luta.png", "pergunta": "Quando o árbitro estende o braço à frente e faz movimento vertical em direção ao solo, o que ele indica?",
-         "opcoes": ["Parar a luta", "Início da luta", "Punição", "Declaração do vencedor"], "resposta": "Início da luta"},
-        {"imagem": "imagens/parar_luta.png", "pergunta": "O que significa o gesto do árbitro?",
-         "opcoes": ["Punição", "Parar a luta", "Ponto para ambos", "Desclassificação"], "resposta": "Parar a luta"},
-        {"imagem": "imagens/dois_pontos.png", "pergunta": "O árbitro ergue dois dedos (indicador e médio). O que significa?",
-         "opcoes": ["Duas vantagens", "Dois pontos (queda, raspagem ou joelho na barriga)", "Punição dupla", "Pedido de médico"], "resposta": "Dois pontos (queda, raspagem ou joelho na barriga)"}
+        {"nivel": 1, "imagem": "imagens/inicio_luta.png",
+         "pergunta": "Quando o árbitro estende o braço à frente e faz movimento vertical em direção ao solo, o que ele indica?",
+         "opcoes": ["A) Parar a luta", "B) Início da luta", "C) Punição", "D) Declaração do vencedor"],
+         "resposta": "B"},
+        {"nivel": 1, "imagem": "imagens/parar_luta.png",
+         "pergunta": "O que significa o gesto do árbitro?",
+         "opcoes": ["A) Punição", "B) Parar a luta", "C) Ponto para ambos", "D) Desclassificação"],
+         "resposta": "B"},
+        {"nivel": 1, "imagem": "imagens/dois_pontos.png",
+         "pergunta": "O árbitro ergue dois dedos (indicador e médio). O que significa?",
+         "opcoes": ["A) Duas vantagens", "B) Dois pontos (queda, raspagem ou joelho na barriga)",
+                    "C) Punição dupla", "D) Pedido de médico"],
+         "resposta": "B"}
     ],
     "graduacoes": [
-        {"imagem": "imagens/faixas.png", "pergunta": "Qual é a ordem correta das faixas no jiu-jitsu adulto?",
-         "opcoes": ["Branca, Azul, Roxa, Marrom, Preta", "Azul, Branca, Roxa, Marrom, Preta", "Branca, Roxa, Azul, Marrom, Preta", "Branca, Azul, Preta, Marrom"], "resposta": "Branca, Azul, Roxa, Marrom, Preta"}
+        {"nivel": 1, "imagem": "imagens/faixas.png",
+         "pergunta": "Qual é a ordem correta das faixas no jiu-jitsu adulto?",
+         "opcoes": ["A) Branca, Azul, Roxa, Marrom, Preta",
+                    "B) Azul, Branca, Roxa, Marrom, Preta",
+                    "C) Branca, Roxa, Azul, Marrom, Preta",
+                    "D) Branca, Azul, Preta, Marrom"],
+         "resposta": "A"},
+        {"nivel": 2, "imagem": "imagens/faixa_preta.png",
+         "pergunta": "Após quantos graus na faixa preta o atleta se torna faixa coral?",
+         "opcoes": ["A) 4º grau", "B) 5º grau", "C) 6º grau", "D) 7º grau"],
+         "resposta": "D"},
+        {"nivel": 3, "imagem": "imagens/faixa_vermelha.png",
+         "pergunta": "A faixa vermelha é atribuída a mestres com quantos anos de prática e contribuição?",
+         "opcoes": ["A) 20 anos", "B) 30 anos", "C) 40 anos", "D) 50 anos"],
+         "resposta": "C"}
     ],
     "historia": [
-        {"imagem": "imagens/historia_jj.png", "pergunta": "Quem é considerado o precursor do jiu-jitsu brasileiro?",
-         "opcoes": ["Rickson Gracie", "Mitsuyo Maeda (Conde Koma)", "Helio Gracie", "Carlos Gracie"], "resposta": "Mitsuyo Maeda (Conde Koma)"}
+        {"nivel": 1, "imagem": "imagens/historia_jj.png",
+         "pergunta": "Quem é considerado o introdutor do jiu-jitsu no Brasil?",
+         "opcoes": ["A) Jigoro Kano", "B) Mitsuyo Maeda", "C) Hélio Gracie", "D) Carlos Gracie"],
+         "resposta": "B"},
+        {"nivel": 2, "imagem": "imagens/gracie_family.png",
+         "pergunta": "Qual membro da família Gracie é reconhecido por adaptar o jiu-jitsu para pessoas mais leves?",
+         "opcoes": ["A) Hélio Gracie", "B) Rorion Gracie", "C) Rickson Gracie", "D) Royce Gracie"],
+         "resposta": "A"},
+        {"nivel": 3, "imagem": "imagens/projeto_resgate.png",
+         "pergunta": "O Projeto Resgate GFTeam IAPC de Irajá tem como missão:",
+         "opcoes": ["A) Ensinar apenas competição",
+                    "B) Promover o jiu-jitsu como ferramenta de transformação social",
+                    "C) Formar atletas profissionais exclusivamente",
+                    "D) Focar em lutas internacionais"],
+         "resposta": "B"}
     ]
 }
 
 # =====================================================
-# LÓGICA PRINCIPAL
+# ESTADOS DO JOGO
 # =====================================================
-
 if "tema" not in st.session_state:
     st.session_state.tema = None
+if "nivel" not in st.session_state:
+    st.session_state.nivel = 1
 if "indice" not in st.session_state:
     st.session_state.indice = 0
 if "score" not in st.session_state:
@@ -82,50 +168,64 @@ st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
 
 if not st.session_state.tema:
     st.subheader("Escolha o tema do seu desafio:")
-    if st.button("Regras e Arbitragem ⚖️"):
-        st.session_state.tema = "regras"
-    if st.button("Graduações e Faixas 🎖️"):
-        st.session_state.tema = "graduacoes"
-    if st.button("História e Projeto Resgate 📜"):
-        st.session_state.tema = "historia"
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        if st.button("⚖️ Regras e Arbitragem"):
+            st.session_state.tema = "regras"
+    with col2:
+        if st.button("🎖️ Graduações e Faixas"):
+            st.session_state.tema = "graduacoes"
+    with col3:
+        if st.button("📜 História e Projeto Resgate"):
+            st.session_state.tema = "historia"
     st.stop()
 
 # =====================================================
-# INÍCIO DO QUIZ
+# QUIZ
 # =====================================================
 tema = st.session_state.tema
-lista = perguntas[tema]
-total = len(lista)
-pergunta_atual = lista[st.session_state.indice]
+lista_perguntas = [p for p in perguntas[tema] if p["nivel"] == st.session_state.nivel]
+total = len(lista_perguntas)
 
-st.markdown(f"### Tema: {tema.capitalize()}")
-st.markdown(f"**Pergunta {st.session_state.indice + 1} de {total}**")
+# Quando termina um nível
+if st.session_state.indice >= total:
+    if st.session_state.nivel < 3:
+        st.success(f"🎉 Parabéns! Você completou o Nível {st.session_state.nivel}.")
+        mostrar_imagem("imagens/parabens.png")
+        if st.button("👉 Avançar para o próximo nível"):
+            st.session_state.nivel += 1
+            st.session_state.indice = 0
+        st.stop()
+    else:
+        st.balloons()
+        st.markdown(
+            f"<h2>🏁 Fim do jogo!</h2><h3>Você acertou {st.session_state.score} perguntas.</h3>",
+            unsafe_allow_html=True,
+        )
+        mostrar_imagem("imagens/logo_projeto_resgate.png")
+        if st.button("🔁 Jogar novamente"):
+            for key in list(st.session_state.keys()):
+                del st.session_state[key]
+        st.stop()
 
-# Exibe imagem se existir
-if os.path.exists(pergunta_atual["imagem"]):
-    img = Image.open(pergunta_atual["imagem"])
-    st.image(img, width=400)
+# =====================================================
+# EXIBE A PERGUNTA ATUAL
+# =====================================================
+pergunta_atual = lista_perguntas[st.session_state.indice]
 
-# Pergunta e opções
-st.write(f"**{pergunta_atual['pergunta']}**")
+st.markdown(f"### Tema: {tema.capitalize()} | Nível {st.session_state.nivel}")
+st.markdown(f"<div class='question'>{pergunta_atual['pergunta']}</div>", unsafe_allow_html=True)
+mostrar_imagem(pergunta_atual["imagem"])
 
-opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None)
+opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None, label_visibility="collapsed")
 
 if st.button("Responder"):
-    if opcao == pergunta_atual["resposta"]:
+    if not opcao:
+        st.warning("Escolha uma opção antes de continuar!")
+    elif opcao[0] == pergunta_atual["resposta"]:
         st.success("✅ Correto!")
         st.session_state.score += 1
     else:
-        st.error(f"❌ Errado! A resposta certa era: **{pergunta_atual['resposta']}**")
-
+        st.error(f"❌ Errado! A resposta certa era {pergunta_atual['resposta']}.")
     st.session_state.indice += 1
-    if st.session_state.indice >= total:
-        st.balloons()
-        st.success(f"🏁 Fim do Quiz! Você acertou {st.session_state.score} de {total} perguntas.")
-        if st.button("🔁 Jogar novamente"):
-            st.session_state.tema = None
-            st.session_state.indice = 0
-            st.session_state.score = 0
-        st.stop()
-    else:
-        st.rerun()
+    st.rerun()
