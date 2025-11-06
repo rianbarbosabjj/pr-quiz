@@ -1,163 +1,131 @@
-# ============================================================
-# TESTE DE CONHECIMENTOS - PROJETO RESGATE | GFTEAM IAPC IRAJÁ
-# Versão protótipo responsiva (PC + celular) - Streamlit
-# ============================================================
-
 import streamlit as st
+from PIL import Image
 import random
+import os
 
-# ------------------ CONFIGURAÇÕES GERAIS ---------------------
+# =====================================================
+# CONFIGURAÇÕES DE ESTILO E TEMA
+# =====================================================
 st.set_page_config(
-    page_title="Teste de Conhecimentos - Projeto Resgate | GFTeam IAPC de Irajá",
-    page_icon="🥋",
-    layout="centered"
+    page_title="Quiz do Projeto Resgate 🥋",
+    layout="centered",
+    page_icon="🥋"
 )
 
-# Paleta de cores
-COR_FUNDO = "#0e2d26"       # verde escuro do fundo
-COR_DESTAQUE = "#FFD700"    # dourado dos títulos
+COR_FUNDO = "#0e2d26"
 COR_TEXTO = "#FFFFFF"
+COR_DESTAQUE = "#FFD700"
 COR_BOTAO = "#078B6C"
 
-# ------------------ ESTILO CSS PERSONALIZADO -----------------
-st.markdown(f"""
+st.markdown(
+    f"""
     <style>
-        .stApp {{
+        body {{
             background-color: {COR_FUNDO};
-        }}
-        h1, h2, h3, h4, h5, h6, p, li {{
             color: {COR_TEXTO};
-        }}
-        .titulo {{
-            text-align: center;
-            color: {COR_DESTAQUE};
-            font-weight: bold;
-        }}
-        .pergunta {{
-            font-size: 1.2rem;
-            margin-top: 20px;
         }}
         .stButton>button {{
             background-color: {COR_BOTAO};
             color: white;
-            font-weight: bold;
-            border: none;
             border-radius: 10px;
-            width: 100%;
-            height: 3em;
+            padding: 10px 25px;
+            border: none;
+            font-weight: bold;
+            font-size: 18px;
         }}
         .stButton>button:hover {{
             background-color: {COR_DESTAQUE};
-            color: {COR_FUNDO};
+            color: black;
         }}
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True
+)
 
-# ------------------ BANCO DE PERGUNTAS -----------------------
+# =====================================================
+# PERGUNTAS POR TEMA
+# =====================================================
 perguntas = {
-    "História": [
-        {"nivel": 1, "pergunta": "O jiu-jitsu tem origem em qual país?",
-         "opcoes": ["Japão", "China", "Brasil", "Índia"], "resposta": "Japão"},
-        {"nivel": 1, "pergunta": "Quem é considerado o introdutor do jiu-jitsu no Brasil?",
-         "opcoes": ["Jigoro Kano", "Mitsuyo Maeda", "Hélio Gracie", "Carlos Gracie"], "resposta": "Mitsuyo Maeda"},
-        {"nivel": 2, "pergunta": "Qual membro da família Gracie adaptou o jiu-jitsu para pessoas mais leves e fracas?",
-         "opcoes": ["Hélio Gracie", "Rorion Gracie", "Rickson Gracie", "Royce Gracie"], "resposta": "Hélio Gracie"},
-        {"nivel": 3, "pergunta": "Em qual cidade Mitsuyo Maeda começou a ensinar jiu-jitsu no Brasil?",
-         "opcoes": ["São Paulo", "Belém do Pará", "Rio de Janeiro", "Manaus"], "resposta": "Belém do Pará"}
+    "regras": [
+        {"imagem": "imagens/inicio_luta.png", "pergunta": "Quando o árbitro estende o braço à frente e faz movimento vertical em direção ao solo, o que ele indica?",
+         "opcoes": ["Parar a luta", "Início da luta", "Punição", "Declaração do vencedor"], "resposta": "Início da luta"},
+        {"imagem": "imagens/parar_luta.png", "pergunta": "O que significa o gesto do árbitro?",
+         "opcoes": ["Punição", "Parar a luta", "Ponto para ambos", "Desclassificação"], "resposta": "Parar a luta"},
+        {"imagem": "imagens/dois_pontos.png", "pergunta": "O árbitro ergue dois dedos (indicador e médio). O que significa?",
+         "opcoes": ["Duas vantagens", "Dois pontos (queda, raspagem ou joelho na barriga)", "Punição dupla", "Pedido de médico"], "resposta": "Dois pontos (queda, raspagem ou joelho na barriga)"}
     ],
-    "Regras": [
-        {"nivel": 1, "pergunta": "Quantos pontos valem uma raspagem bem executada?",
-         "opcoes": ["2 pontos", "3 pontos", "4 pontos", "Apenas vantagem"], "resposta": "2 pontos"},
-        {"nivel": 2, "pergunta": "Quantos segundos o atleta deve estabilizar uma posição para marcar pontos?",
-         "opcoes": ["2 segundos", "3 segundos", "5 segundos", "10 segundos"], "resposta": "3 segundos"},
-        {"nivel": 3, "pergunta": "Qual é a sequência de punições para faltas graves?",
-         "opcoes": ["Aviso → Vantagem → 2 pontos → Desclassificação", "Punição direta", "Três avisos e expulsão", "Nenhuma das anteriores"],
-         "resposta": "Aviso → Vantagem → 2 pontos → Desclassificação"}
+    "graduacoes": [
+        {"imagem": "imagens/faixas.png", "pergunta": "Qual é a ordem correta das faixas no jiu-jitsu adulto?",
+         "opcoes": ["Branca, Azul, Roxa, Marrom, Preta", "Azul, Branca, Roxa, Marrom, Preta", "Branca, Roxa, Azul, Marrom, Preta", "Branca, Azul, Preta, Marrom"], "resposta": "Branca, Azul, Roxa, Marrom, Preta"}
     ],
-    "Graduações": [
-        {"nivel": 1, "pergunta": "Qual é a sequência correta das faixas no jiu-jitsu adulto?",
-         "opcoes": ["Branca, Azul, Roxa, Marrom, Preta", "Azul, Roxa, Marrom, Preta, Coral", "Branca, Roxa, Azul, Marrom, Preta", "Branca, Azul, Preta, Marrom"], "resposta": "Branca, Azul, Roxa, Marrom, Preta"},
-        {"nivel": 2, "pergunta": "Após quantos graus na faixa preta o atleta se torna faixa coral?",
-         "opcoes": ["4º grau", "5º grau", "6º grau", "7º grau"], "resposta": "7º grau"},
-        {"nivel": 3, "pergunta": "A faixa vermelha é atribuída a mestres com quantos anos de prática?",
-         "opcoes": ["20 anos", "30 anos", "40 anos", "50 anos"], "resposta": "40 anos"}
+    "historia": [
+        {"imagem": "imagens/historia_jj.png", "pergunta": "Quem é considerado o precursor do jiu-jitsu brasileiro?",
+         "opcoes": ["Rickson Gracie", "Mitsuyo Maeda (Conde Koma)", "Helio Gracie", "Carlos Gracie"], "resposta": "Mitsuyo Maeda (Conde Koma)"}
     ]
 }
 
-# ------------------ INÍCIO DO APP ----------------------------
-st.markdown("<h1 class='titulo'>🥋 Teste de Conhecimentos<br>Projeto Resgate | GFTeam IAPC de Irajá</h1>", unsafe_allow_html=True)
-st.markdown("---")
+# =====================================================
+# LÓGICA PRINCIPAL
+# =====================================================
 
-if "fase" not in st.session_state:
-    st.session_state.fase = "login"
-if "usuario" not in st.session_state:
-    st.session_state.usuario = ""
 if "tema" not in st.session_state:
     st.session_state.tema = None
-if "pontuacao" not in st.session_state:
-    st.session_state.pontuacao = 0
+if "indice" not in st.session_state:
+    st.session_state.indice = 0
+if "score" not in st.session_state:
+    st.session_state.score = 0
 
-# ------------------ TELA DE LOGIN SIMULADO -------------------
-if st.session_state.fase == "login":
-    nome = st.text_input("Digite seu nome para começar:")
-    if st.button("Entrar no Quiz"):
-        if nome.strip():
-            st.session_state.usuario = nome.strip().title()
-            st.session_state.fase = "menu"
-            st.rerun()
-        else:
-            st.warning("Por favor, digite um nome válido.")
+# =====================================================
+# TELA INICIAL
+# =====================================================
+st.title("🥋 Quiz do Projeto Resgate GFTeam IAPC de Irajá")
 
-# ------------------ MENU PRINCIPAL ---------------------------
-elif st.session_state.fase == "menu":
-    st.markdown(f"👋 Olá, **{st.session_state.usuario}**! Escolha um tema para começar o desafio.")
-    tema = st.selectbox("Selecione o tema:", list(perguntas.keys()))
-    if st.button("Iniciar Jogo"):
-        st.session_state.tema = tema
-        st.session_state.pontuacao = 0
-        st.session_state.perguntas_tema = random.sample(perguntas[tema], len(perguntas[tema]))
-        st.session_state.q_index = 0
-        st.session_state.fase = "quiz"
-        st.rerun()
+if not st.session_state.tema:
+    st.subheader("Escolha o tema do seu desafio:")
+    if st.button("Regras e Arbitragem ⚖️"):
+        st.session_state.tema = "regras"
+    if st.button("Graduações e Faixas 🎖️"):
+        st.session_state.tema = "graduacoes"
+    if st.button("História e Projeto Resgate 📜"):
+        st.session_state.tema = "historia"
+    st.stop()
 
-# ------------------ TELA DO QUIZ -----------------------------
-elif st.session_state.fase == "quiz":
-    tema_atual = st.session_state.tema
-    questoes = st.session_state.perguntas_tema
-    q_index = st.session_state.q_index
+# =====================================================
+# INÍCIO DO QUIZ
+# =====================================================
+tema = st.session_state.tema
+lista = perguntas[tema]
+total = len(lista)
+pergunta_atual = lista[st.session_state.indice]
 
-    if q_index < len(questoes):
-        q = questoes[q_index]
-        st.markdown(f"### Pergunta {q_index + 1} de {len(questoes)} (Nível {q['nivel']})")
-        st.markdown(f"<div class='pergunta'>{q['pergunta']}</div>", unsafe_allow_html=True)
-        resposta = st.radio("Escolha uma opção:", q["opcoes"], key=f"resp_{q_index}")
+st.markdown(f"### Tema: {tema.capitalize()}")
+st.markdown(f"**Pergunta {st.session_state.indice + 1} de {total}**")
 
-        if st.button("Responder"):
-            if resposta == q["resposta"]:
-                st.success("✅ Resposta correta!")
-                st.session_state.pontuacao += 1
-            else:
-                st.error(f"❌ Resposta incorreta. A correta era: **{q['resposta']}**")
-            st.session_state.q_index += 1
-            st.rerun()
+# Exibe imagem se existir
+if os.path.exists(pergunta_atual["imagem"]):
+    img = Image.open(pergunta_atual["imagem"])
+    st.image(img, width=400)
+
+# Pergunta e opções
+st.write(f"**{pergunta_atual['pergunta']}**")
+
+opcao = st.radio("Escolha sua resposta:", pergunta_atual["opcoes"], index=None)
+
+if st.button("Responder"):
+    if opcao == pergunta_atual["resposta"]:
+        st.success("✅ Correto!")
+        st.session_state.score += 1
     else:
-        st.session_state.fase = "resultado"
-        st.rerun()
+        st.error(f"❌ Errado! A resposta certa era: **{pergunta_atual['resposta']}**")
 
-# ------------------ RESULTADO FINAL --------------------------
-elif st.session_state.fase == "resultado":
-    st.markdown("## 🏁 Fim do Teste!")
-    st.markdown(f"**{st.session_state.usuario}**, você acertou **{st.session_state.pontuacao}** de **{len(st.session_state.perguntas_tema)}** perguntas.")
-    
-    faixa = (
-        "Faixa Branca 🥋" if st.session_state.pontuacao <= 2 else
-        "Faixa Azul 💙" if st.session_state.pontuacao <= 4 else
-        "Faixa Roxa 💜" if st.session_state.pontuacao <= 6 else
-        "Faixa Marrom 🤎" if st.session_state.pontuacao <= 8 else
-        "Faixa Preta 🖤"
-    )
-    st.markdown(f"### Seu nível atual: **{faixa}**")
-
-    if st.button("🔁 Jogar Novamente"):
-        st.session_state.fase = "menu"
+    st.session_state.indice += 1
+    if st.session_state.indice >= total:
+        st.balloons()
+        st.success(f"🏁 Fim do Quiz! Você acertou {st.session_state.score} de {total} perguntas.")
+        if st.button("🔁 Jogar novamente"):
+            st.session_state.tema = None
+            st.session_state.indice = 0
+            st.session_state.score = 0
+        st.stop()
+    else:
         st.rerun()
