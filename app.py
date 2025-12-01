@@ -144,8 +144,8 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None):
         # ----------------------------------------------------
         
         # 1. Título Principal
-        pdf.set_y(45) 
-        pdf.set_font("Helvetica", "B", 24)
+        pdf.set_y(15) 
+        pdf.set_font("Helvetica", "B", 30)
         pdf.set_text_color(*cor_dourado)
         titulo = "CERTIFICADO DE EXAME TEÓRICO DE FAIXA"
         
@@ -153,20 +153,16 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None):
         pdf.cell(largura_util, 12, titulo, 0, 1, "C") # Centralizado
         
         pdf.ln(20) # Espaço grande após o título
-        
+
+        #Logoda Equipe
+        logo_path = "assets/logo.png"#alterar par a logo da equipe, na qual o professor deverá fazer upload em gestão de equipe
+        if os.path.exists(logo_path):
+        pdf.image(logo_path, x=133, y=40, w=32)
         # 2. Placeholder LOGO_EQUIPE (Rotacionado)
         y_logo_equipe = pdf.get_y() - 10 
         x_logo_equipe = centro_x_util + 40 # Posição no quadrante superior direito
 
-        pdf.set_xy(x_logo_equipe, y_logo_equipe)
-        pdf.set_font("Helvetica", "B", 12)
-        pdf.set_text_color(255, 0, 0) # Cor vermelha para o placeholder
-        
-        # Rotaciona 30 graus no ponto (x_logo_equipe, y_logo_equipe)
-        pdf.rotate(30, x_logo_equipe, y_logo_equipe) 
-        pdf.cell(50, 5, "[LOGO_EQUIPE]", 0, 0, "C")
-        pdf.rotate(0) # Volta a rotação
-        
+      
         # 3. Textos e Nome
         pdf.set_y(y_logo_equipe + 30) # Posição após a área do logo rotacionado
         
@@ -210,7 +206,7 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None):
         pdf.ln(15)
 
         # Faixa - Em destaque
-        pdf.set_font("Helvetica", "B", 32)
+        pdf.set_font("Helvetica", "B", 30)
         pdf.set_text_color(*cor_preto_texto)
         texto_faixa = f"{str(faixa).upper()}" # Usando o valor da variável 'faixa'
         
@@ -309,3 +305,4 @@ if __name__ == "__main__":
             os.remove(qr_path)
     except Exception as e:
         print(f"Não foi possível remover o arquivo QR temporário: {e}")
+
