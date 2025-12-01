@@ -2,8 +2,9 @@ import streamlit as st
 from fpdf import FPDF
 import os
 import base64
+from streamlit_pdf_viewer import pdf_viewer # NOVA IMPORTAÇÃO
 
-# --- 1. FUNÇÃO ORIGINAL (COM PARÂMETROS DE COORDENADAS) ---
+# --- 1. FUNÇÃO DE GERAÇÃO DE PDF ---
 def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, tamanho_titulo=24, posicao_y_titulo=45, espacamento_titulo=20, incluir_logo=True):
     # Cores baseadas no PDF
     cor_preto = (25, 25, 25)
@@ -38,7 +39,6 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor
         # Configuração da Área de Texto
         x_inicio = largura_barra + 15  # Margem maior após a barra
         largura_util = 297 - x_inicio - 15 
-        # centro_x não precisa ser alterado, pois depende da largura da área de texto
         
         # Título Principal - Posição Y ajustável
         pdf.set_y(posicao_y_titulo) 
@@ -48,8 +48,6 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor
         pdf.cell(largura_util, tamanho_titulo / 2, titulo, ln=1, align="C")
         
         pdf.ln(espacamento_titulo)  # Espaço ajustável
-        
-        # --- O RESTO DO CÓDIGO PERMANECE O MESMO, MAS ADAPTA-SE À NOVA POSIÇÃO INICIAL DO TÍTULO ---
         
         # Texto Introdutório - Primeira linha
         pdf.set_font("Helvetica", "", 16)
@@ -162,7 +160,7 @@ with col_config:
     # Sliders de Coordenadas e Tamanho
     largura_barra_ajuste = st.slider("Largura da Barra Lateral (mm):", 5, 50, 25)
     
-    # NOVO: Controle de Posição Y do Título
+    # Controle de Posição Y do Título
     posicao_y_titulo_ajuste = st.slider("Posição Y (Vertical) do Título:", 10, 80, 45, help="Controla o pdf.set_y(Y) antes do título principal.")
     
     tamanho_titulo_ajuste = st.slider("Tamanho da Fonte do Título:", 18, 40, 24)
@@ -187,7 +185,7 @@ pdf_bytes, nome_arquivo = gerar_pdf(
     cor_dourado_rgb=cor_dourado_rgb_tuple,
     largura_barra=largura_barra_ajuste,
     tamanho_titulo=tamanho_titulo_ajuste,
-    posicao_y_titulo=posicao_y_titulo_ajuste, # NOVO PARÂMETRO
+    posicao_y_titulo=posicao_y_titulo_ajuste,
     espacamento_titulo=espacamento_ajuste,
     incluir_logo=incluir_logo_check
 )
@@ -196,12 +194,14 @@ with col_preview:
     st.header("✨ Pré-visualização")
     
     if pdf_bytes:
-        # Usa base64 para embedar o PDF no Streamlit
-        base64_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
-        pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
-        st.markdown(pdf_display, unsafe_allow_html=True)
+        # NOVO CÓDIGO: Usando o componente pdf_viewer para corrigir o bloqueio do Chrome
+        pdf_viewer(
+            input=pdf_bytes,
+            width=700,
+            height=600
+        )
         
-        # Botão de download
+        # Botão de download (mantém o mesmo)
         st.download_button(
             label="Baixar PDF Gerado",
             data=pdf_bytes,
