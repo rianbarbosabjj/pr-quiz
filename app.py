@@ -5,11 +5,11 @@ import base64
 from streamlit_pdf_viewer import pdf_viewer
 
 # --- CONFIGURAÇÃO DA FONTE ---
-# ATENÇÃO: Para usar a fonte 'Allura', você deve ter os arquivos da fonte (ex: Allura.ttf)
-# e, idealmente, os arquivos de métrica gerados pelo utilitário FPDF na pasta 'assets/'.
-# Se a fonte Allura não carregar, comente as linhas 'pdf.add_font' e use uma fonte padrão.
-CUSTOM_FONT_NAME = 'Allura-Regular'
-CUSTOM_FONT_FILE = 'assets/Allura-Regular.ttf' # Substitua pelo nome exato do seu arquivo .ttf
+# A fonte customizada (Allura) foi desativada temporariamente para corrigir a falha na pré-visualização.
+# Para reativar, descomente as linhas e certifique-se que Allura.ttf E os arquivos de métrica
+# gerados pelo FPDF (ex: Allura.json) estão na pasta 'assets/'.
+CUSTOM_FONT_NAME = 'Helvetica' # Fonte padrão de fallback
+CUSTOM_FONT_FILE = 'assets/Allura.ttf' 
 
 # --- 1. FUNÇÃO DE GERAÇÃO DE PDF ---
 def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, margem_x_conteudo=15, tamanho_titulo=24, posicao_y_titulo=45, posicao_y_nome=70, posicao_y_faixa=120, posicao_x_assinatura=150, posicao_y_assinatura_nome=170, espacamento_titulo=20, incluir_logo=False):
@@ -25,20 +25,15 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
         pdf.set_auto_page_break(False)
         pdf.add_page()
         
-        # 1. Carregar Fonte Customizada (Allura)
-        # O argumento 'uni=True' é importante para fontes Unicode/TTF
+        # 1. Carregar Fonte Customizada (Temporariamente Desativado)
         if os.path.exists(CUSTOM_FONT_FILE):
-             # Tenta adicionar a fonte. Se houver erro de metrica, pode falhar.
              try:
-                 pdf.add_font(CUSTOM_FONT_NAME, '', CUSTOM_FONT_FILE, uni=True)
+                 # Esta linha costuma falhar se o arquivo de métrica (ex: Allura.json) estiver faltando
+                 # pdf.add_font('Allura', '', CUSTOM_FONT_FILE, uni=True) 
+                 pass
              except Exception:
-                 st.warning(f"Erro ao carregar a fonte customizada '{CUSTOM_FONT_NAME}'. Usando Helvetica.")
-                 CUSTOM_FONT_NAME = 'Helvetica'
+                 st.warning(f"Erro ao carregar a fonte customizada.")
                  
-        else:
-             st.warning(f"Arquivo de fonte '{CUSTOM_FONT_FILE}' não encontrado. Usando Helvetica.")
-             CUSTOM_FONT_NAME = 'Helvetica'
-
         # Fundo e Barra Lateral
         pdf.set_fill_color(*cor_fundo)
         pdf.rect(0, 0, 297, 210, "F")
@@ -114,21 +109,20 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
         
         # --- BLOC DA ASSINATURA ---
         
-        # 6. Assinatura do Professor (Nome em Allura) (Posição X e Y ajustável)
+        # 6. Assinatura do Professor (Nome em Helvetica, temporariamente) 
         if professor:
             professor_limpo = professor.encode('latin-1', 'replace').decode('latin-1')
             
-            # Escreve o nome com a Fonte Allura
+            # Escreve o nome com a Fonte padrão para evitar a falha de carregamento da customizada
             pdf.set_xy(posicao_x_assinatura, posicao_y_assinatura_nome)
-            pdf.set_font(CUSTOM_FONT_NAME, '', 20)
+            pdf.set_font(CUSTOM_FONT_NAME, 'I', 20) # Usando a fonte padrão com itálico para simular a Allura
             pdf.set_text_color(*cor_preto)
-            pdf.cell(0, 10, professor_limpo, ln=1, align="L") # Align L para usar X como ponto de início
+            pdf.cell(0, 10, professor_limpo, ln=1, align="L") 
             
             # Linha de assinatura
-            y_assinatura = pdf.get_y() + 2 # Posição Y da linha logo abaixo do nome
+            y_assinatura = pdf.get_y() + 2
             largura_linha_assinatura = 80
             
-            # X da linha é relativo ao X do nome do professor
             x_linha_assinatura = posicao_x_assinatura
             
             pdf.set_draw_color(*cor_preto)
@@ -140,14 +134,14 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
             pdf.set_font("Helvetica", "", 10)
             pdf.set_text_color(*cor_cinza)
             pdf.cell(largura_linha_assinatura, 5, "Professor Responsável", align="C")
-        
-        # Nota: Pontuação/Total/Código foram removidos da função para simplificar e focar no design
+
         return pdf.output(dest='S').encode('latin-1'), f"Certificado_{usuario_nome.split()[0]}.pdf"
     except Exception as e:
+        # Se houver outro erro, ele ainda será exibido
         st.error(f"Erro ao gerar PDF: {e}")
         return None, None
 
-# --- 2. INTERFACE STREAMLIT ---
+# --- 2. INTERFACE STREAMLIT (SEM ALTERAÇÕES) ---
 
 st.set_page_config(layout="wide", page_title="Editor de Certificado")
 
@@ -188,7 +182,6 @@ with col_config:
     st.subheader("Posicionamento da Assinatura")
     
     # X/Y Assinatura
-    # Nota: A página A4 Landscape tem 297mm de largura
     posicao_x_assinatura_ajuste = st.slider("X da Assinatura (mm):", 50, 250, 150, help="Define a posição horizontal (X) do nome do professor e da linha.")
     posicao_y_assinatura_nome_ajuste = st.slider("Y do Nome da Assinatura (mm):", 150, 200, 170, help="Define a posição vertical (Y) do nome do professor.")
     
@@ -238,5 +231,3 @@ with col_preview:
         )
     else:
         st.warning("Não foi possível gerar o PDF. Verifique os logs de erro.")
-
-
