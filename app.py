@@ -3,9 +3,9 @@ from fpdf import FPDF
 import os
 import base64
 
-# --- 1. FUNÇÃO ORIGINAL (Integrada) ---
-def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, tamanho_titulo=24, espacamento_titulo=20, incluir_logo=True):
-    # Valores fixos para a função original, mas adaptáveis
+# --- 1. FUNÇÃO ORIGINAL (COM PARÂMETROS DE COORDENADAS) ---
+def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, tamanho_titulo=24, posicao_y_titulo=45, espacamento_titulo=20, incluir_logo=True):
+    # Cores baseadas no PDF
     cor_preto = (25, 25, 25)
     cor_cinza = (100, 100, 100)
     cor_fundo = (252, 252, 250)
@@ -28,28 +28,28 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor
         pdf.set_fill_color(*cor_dourado)
         pdf.rect(largura_barra, 0, 2, 210, "F")
 
-        # Logo (somente se a opção for marcada e o arquivo existir)
+        # Logo 
         if incluir_logo and os.path.exists("assets/logo.png"):
             try: 
-                # Ajusta a posição x com base na largura da barra
                 pdf.image("assets/logo.png", x=5, y=20, w=largura_barra - 10) 
             except Exception as e:
-                # Omitido para não quebrar a aplicação no Streamlit se o logo faltar
                 pass
         
         # Configuração da Área de Texto
         x_inicio = largura_barra + 15  # Margem maior após a barra
         largura_util = 297 - x_inicio - 15 
-        centro_x = x_inicio + (largura_util / 2)
-
-        # Título Principal - Tamanho ajustável
-        pdf.set_y(45) 
+        # centro_x não precisa ser alterado, pois depende da largura da área de texto
+        
+        # Título Principal - Posição Y ajustável
+        pdf.set_y(posicao_y_titulo) 
         pdf.set_font("Helvetica", "B", tamanho_titulo)
         pdf.set_text_color(*cor_dourado)
         titulo = "CERTIFICADO DE EXAME TEÓRICO DE FAIXA"
         pdf.cell(largura_util, tamanho_titulo / 2, titulo, ln=1, align="C")
         
         pdf.ln(espacamento_titulo)  # Espaço ajustável
+        
+        # --- O RESTO DO CÓDIGO PERMANECE O MESMO, MAS ADAPTA-SE À NOVA POSIÇÃO INICIAL DO TÍTULO ---
         
         # Texto Introdutório - Primeira linha
         pdf.set_font("Helvetica", "", 16)
@@ -63,6 +63,7 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor
         
         tamanho_fonte = 28
         largura_maxima_nome = largura_util - 40
+        centro_x = x_inicio + (largura_util / 2)
         
         while True:
             pdf.set_font("Helvetica", "B", tamanho_fonte)
@@ -129,7 +130,6 @@ def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None, cor
         pdf.set_text_color(*cor_cinza)
         pdf.cell(largura_linha_assinatura, 5, "Professor Responsável", align="C")
 
-        # Retorna o PDF em bytes para o Streamlit
         return pdf.output(dest='S').encode('latin-1'), f"Certificado_{usuario_nome.split()[0]}.pdf"
     except Exception as e:
         st.error(f"Erro ao gerar PDF: {e}")
@@ -152,24 +152,26 @@ with col_config:
     faixa_alvo = st.text_input("Faixa a ser conferida:", "Faixa Roxa")
     professor_nome = st.text_input("Nome do Professor Responsável:", "Sensei Mestre Kawashima")
     
-    st.subheader("Ajustes de Design")
+    st.subheader("Ajustes de Design e Coordenadas")
     
-    # Slider e Color Picker
+    # Color Picker
     cor_dourado_hex = st.color_picker("Cor de Destaque (Dourado):", "#B8860B")
-    
-    # Converte HEX para RGB
     h = cor_dourado_hex.lstrip('#')
     cor_dourado_rgb_tuple = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
     
+    # Sliders de Coordenadas e Tamanho
     largura_barra_ajuste = st.slider("Largura da Barra Lateral (mm):", 5, 50, 25)
+    
+    # NOVO: Controle de Posição Y do Título
+    posicao_y_titulo_ajuste = st.slider("Posição Y (Vertical) do Título:", 10, 80, 45, help="Controla o pdf.set_y(Y) antes do título principal.")
+    
     tamanho_titulo_ajuste = st.slider("Tamanho da Fonte do Título:", 18, 40, 24)
-    espacamento_ajuste = st.slider("Espaçamento Vertical (Após o Título - ln):", 10, 50, 20)
+    espacamento_ajuste = st.slider("Espaçamento Vertical (ln) após Título:", 10, 50, 20)
     
     # Checkbox
     incluir_logo_check = st.checkbox("Incluir Logo (Requer 'assets/logo.png')", value=False)
     
     st.subheader("Dados Não Visíveis (Fixo para o Streamlit)")
-    # Campos que o usuário geralmente não precisaria mudar para o design
     st.text_input("Pontuação (Pontuacao)", 90, disabled=True)
     st.text_input("Total de Pontos (Total)", 100, disabled=True)
     st.text_input("Código de Validação (Codigo)", "XYZ123ABC", disabled=True)
@@ -185,6 +187,7 @@ pdf_bytes, nome_arquivo = gerar_pdf(
     cor_dourado_rgb=cor_dourado_rgb_tuple,
     largura_barra=largura_barra_ajuste,
     tamanho_titulo=tamanho_titulo_ajuste,
+    posicao_y_titulo=posicao_y_titulo_ajuste, # NOVO PARÂMETRO
     espacamento_titulo=espacamento_ajuste,
     incluir_logo=incluir_logo_check
 )
