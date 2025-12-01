@@ -1,253 +1,311 @@
-import streamlit as st
-from fpdf import FPDF
+# -*- coding: utf-8 -*-
 import os
-import base64
-from streamlit_pdf_viewer import pdf_viewer
-import pandas as pd # Importação necessária para criar o DataFrame da tabela
+import random
+from datetime import datetime
+from fpdf import FPDF
+import qrcode
+import time # Para simular o exponencial backoff no mock
 
-# --- CONFIGURAÇÃO DA FONTE ---
-CUSTOM_FONT_NAME = 'Helvetica'
-CUSTOM_FONT_FILE = 'assets/Allura.ttf' 
+# =========================================
+# 1. MOCKS DE DEPENDÊNCIAS (Para tornar o código rodável)
+# =========================================
 
-# --- 1. FUNÇÃO DE GERAÇÃO DE PDF (SEM ALTERAÇÕES) ---
-# A função é mantida idêntica à última versão corrigida (com Helvetica temporária)
-def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, margem_x_conteudo=15, tamanho_titulo=24, posicao_y_titulo=45, posicao_y_nome=70, posicao_y_faixa=120, posicao_x_assinatura=150, posicao_y_assinatura_nome=170, espacamento_titulo=20, incluir_logo=False):
-    
-    # Cores
-    cor_preto = (25, 25, 25)
-    cor_cinza = (100, 100, 100)
-    cor_fundo = (252, 252, 250)
-    cor_dourado = cor_dourado_rgb
+# Mock para a conexão com o banco de dados (Firestore)
+def get_db():
+    class MockDB:
+        def collection(self, name):
+            # Simulando o objeto de coleção para fins de contagem
+            class MockCollection:
+                def count(self):
+                    class MockCount:
+                        def get(self):
+                            # Retorna o mock de resultado de contagem: total = 41
+                            return [[type('MockAggregation', (object,), {'value': 41})()]]
+                    return MockCount()
+            return MockCollection()
+    return MockDB()
 
+# =========================================
+# 2. FUNÇÕES AUXILIARES
+# =========================================
+
+def gerar_codigo_verificacao():
+    """Gera código no formato BJJDIGITAL-{ANO}-{SEQUENCIA}"""
     try:
+        # Mock do banco de dados - usa get_db()
+        db = get_db() 
+        # Tenta simular a contagem (deve retornar 41 do mock)
+        docs = db.collection('resultados').count().get()
+        total = docs[0][0].value  
+    except Exception as e:
+        # Fallback: Gera um número aleatório se não conseguir conectar (cai aqui se o mock falhar)
+        print(f"Alerta: Usando fallback de código aleatório devido ao erro: {e}")
+        total = random.randint(1000, 9999)
+    
+    # Sequência será total + 1 (41 + 1 = 42)
+    sequencia = total + 1
+    ano_atual = datetime.now().year
+    
+    # Formato: BJJDIGITAL-2025-0042
+    return f"BJJDIGITAL-{ano_atual}-{sequencia:04d}"
+
+def gerar_qrcode(codigo):
+    """Gera um QR Code para o código de verificação e salva temporariamente."""
+    
+    # Cria a pasta temporária 'temp' se não existir
+    os.makedirs("temp", exist_ok=True)
+    caminho_qr = f"temp/qr_{codigo}.png"
+    
+    # Evita gerar o QR code se ele já existir (para otimização)
+    if os.path.exists(caminho_qr): return caminho_qr
+
+    base_url = "https://bjjdigital.com.br/verificar"
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(f"{base_url}?codigo={codigo}")
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    # Salva no caminho temporário
+    img.save(caminho_qr) 
+    return caminho_qr
+
+# =========================================
+# 3. PDF PREMIUM (DARK MODE / DOURADO) - CÓDIGO REPLICADO E AJUSTADO
+# =========================================
+# Removida a decoração @st.cache_data para evitar dependência do Streamlit
+def gerar_pdf(usuario_nome, faixa, pontuacao, total, codigo, professor=None):
+    """
+    Gera o certificado PDF em modo paisagem (A4) replicando o layout da imagem.
+    
+    Ajustes de layout:
+    - Uso de cor escura para a barra lateral (Dark Olive).
+    - Inclusão de placeholders para o emblema e data de emissão na barra lateral.
+    - Posicionamento e rotação do placeholder [LOGO_EQUIPE].
+    - Ajuste fino da área de texto principal e centralização.
+    - Posicionamento do QR Code e código de verificação no canto inferior direito.
+    """
+    try:
+        # Configuração do Documento
         pdf = FPDF("L", "mm", "A4")
         pdf.set_auto_page_break(False)
         pdf.add_page()
         
-        # 1. Carregar Fonte Customizada (Temporariamente Desativado)
-        if os.path.exists(CUSTOM_FONT_FILE):
-             try:
-                 # pdf.add_font('Allura', '', CUSTOM_FONT_FILE, uni=True) 
-                 pass
-             except Exception:
-                 st.warning(f"Erro ao carregar a fonte customizada.")
-                 
-        # Fundo e Barra Lateral
+        # Cores baseadas na imagem (Dark Mode / Dourado)
+        cor_dourado = (184, 134, 11)  # Gold
+        cor_preto_fundo = (20, 40, 30) # Dark Olive/Greenish Black para a barra
+        cor_preto_texto = (25, 25, 25) # Preto para o texto principal
+        cor_cinza = (100, 100, 100)
+        cor_fundo = (252, 252, 250) # Fundo branco/quase branco
+
+        # Fundo principal (branco/off-white)
         pdf.set_fill_color(*cor_fundo)
         pdf.rect(0, 0, 297, 210, "F")
-        pdf.set_fill_color(*cor_preto)
+
+        # Barra Lateral Esquerda (Dark Mode)
+        largura_barra = 28 # Ajustado para encaixar os elementos
+        pdf.set_fill_color(*cor_preto_fundo)
         pdf.rect(0, 0, largura_barra, 210, "F")
+        
+        # Linha separadora Dourada (2mm de largura)
         pdf.set_fill_color(*cor_dourado)
         pdf.rect(largura_barra, 0, 2, 210, "F")
 
-        # Logo 
-        if incluir_logo and os.path.exists("assets/logo.png"):
-            pdf.image("assets/logo.png", x=5, y=20, w=largura_barra - 10) 
+        # Configuração da Área de Texto Principal
+        # Início X na área principal (30mm da borda esquerda)
+        x_inicio = largura_barra + 15  
+        largura_util = 297 - x_inicio - 15  # Largura da área de texto
+        centro_x_util = x_inicio + (largura_util / 2) # Ponto central da área de texto
+
+        # ----------------------------------------------------
+        # Elementos da Barra Esquerda
+        # ----------------------------------------------------
         
-        # 2. Configuração da Área de Conteúdo (Margem X)
-        x_inicio = largura_barra + margem_x_conteudo
-        largura_util = 297 - x_inicio - 15 
-        centro_x = x_inicio + (largura_util / 2)
+        # Placeholder Logo Superior (usando a posição da imagem original)
+        pdf.set_xy(5, 20)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(255, 255, 255)
+        pdf.cell(18, 5, "BJJ DIGITAL", 0, 0, "C")
         
-        # 3. Título Principal (Posição Y ajustável)
-        pdf.set_xy(x_inicio, posicao_y_titulo) 
-        pdf.set_font("Helvetica", "B", tamanho_titulo)
+        # Placeholder Emblema Inferior (Coin) - Centralizado na barra
+        pdf.set_xy(0, 175)
+        pdf.set_font("Helvetica", "B", 8)
+        pdf.set_text_color(*cor_dourado)
+        pdf.cell(largura_barra, 5, "[EMBLEMA DOURADO]", 0, 0, "C")
+        
+        # Data de Emissão - Alinhado à esquerda na barra
+        pdf.set_xy(5, 200) # x=5 para uma margem interna
+        pdf.set_font("Helvetica", "", 8)
+        pdf.set_text_color(200, 200, 200) # Cinza claro
+        data_emissao = datetime.now().strftime("%d/%m/%Y")
+        pdf.cell(largura_barra - 5, 5, f"Data de Emissão: {data_emissao}", 0, 0, "L")
+        
+        # ----------------------------------------------------
+        # Elementos da Área Principal
+        # ----------------------------------------------------
+        
+        # 1. Título Principal
+        pdf.set_y(45) 
+        pdf.set_font("Helvetica", "B", 24)
         pdf.set_text_color(*cor_dourado)
         titulo = "CERTIFICADO DE EXAME TEÓRICO DE FAIXA"
-        pdf.cell(largura_util, tamanho_titulo / 2, titulo, ln=1, align="C")
         
-        pdf.set_y(pdf.get_y() + espacamento_titulo) 
+        pdf.set_x(x_inicio) 
+        pdf.cell(largura_util, 12, titulo, 0, 1, "C") # Centralizado
         
-        # 4. Bloco de Nome/Texto Introdutório (Posição Y ajustável)
-        pdf.set_xy(x_inicio, posicao_y_nome)
+        pdf.ln(20) # Espaço grande após o título
         
-        # Texto Introdutório
-        pdf.set_font("Helvetica", "", 16)
-        pdf.set_text_color(*cor_preto)
-        texto_intro = "Certificamos que o aluno(a)"
-        pdf.cell(largura_util, 10, texto_intro, ln=1, align="C")
+        # 2. Placeholder LOGO_EQUIPE (Rotacionado)
+        y_logo_equipe = pdf.get_y() - 10 
+        x_logo_equipe = centro_x_util + 40 # Posição no quadrante superior direito
 
-        # Nome do Aluno - Em destaque (centralizado dentro da largura útil)
+        pdf.set_xy(x_logo_equipe, y_logo_equipe)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.set_text_color(255, 0, 0) # Cor vermelha para o placeholder
+        
+        # Rotaciona 30 graus no ponto (x_logo_equipe, y_logo_equipe)
+        pdf.rotate(30, x_logo_equipe, y_logo_equipe) 
+        pdf.cell(50, 5, "[LOGO_EQUIPE]", 0, 0, "C")
+        pdf.rotate(0) # Volta a rotação
+        
+        # 3. Textos e Nome
+        pdf.set_y(y_logo_equipe + 30) # Posição após a área do logo rotacionado
+        
+        # Texto Introdutório - "Certificamos que o aluno(a)"
+        pdf.set_font("Helvetica", "", 16)
+        pdf.set_text_color(*cor_preto_texto)
+        pdf.set_x(x_inicio)
+        pdf.cell(largura_util, 10, "Certificamos que o aluno(a)", 0, 1, "C")
+
+        # Nome do Aluno - Em negrito e destaque
         pdf.ln(8)
-        nome_limpo = usuario_nome.upper().encode('latin-1', 'replace').decode('latin-1')
-        tamanho_fonte_nome = 28
-        pdf.set_font("Helvetica", "B", tamanho_fonte_nome)
+        try:  
+            nome_limpo = usuario_nome.upper().encode('latin-1', 'replace').decode('latin-1')
+        except:  
+            nome_limpo = usuario_nome.upper()
+
+        # Ajuste de tamanho para o nome (mantido do seu código original)
+        tamanho_fonte = 28
+        largura_maxima_nome = largura_util - 40
+        while True:
+            pdf.set_font("Helvetica", "B", tamanho_fonte)
+            largura_texto = pdf.get_string_width(nome_limpo)
+            if largura_texto <= largura_maxima_nome or tamanho_fonte <= 16:
+                break
+            tamanho_fonte -= 1
+
         pdf.set_text_color(*cor_dourado)
-        pdf.cell(largura_util, 14, nome_limpo, ln=1, align="C") 
-        
-        pdf.ln(20)
+        pdf.set_x(x_inicio)
+        pdf.cell(largura_util, 14, nome_limpo, 0, 1, "C")
 
-        # Continuação do texto
+        pdf.ln(10) 
+        
+        # Texto de Aprovação - Linha combinada da imagem
         pdf.set_font("Helvetica", "", 16)
-        pdf.set_text_color(*cor_preto)
-        texto_aprovacao = "foi APROVADO(A) no Exame teórico para a faixa"
-        pdf.cell(largura_util, 10, texto_aprovacao, ln=1, align="C")
+        pdf.set_text_color(*cor_preto_texto)
+        texto_aprovacao = "foi APROVADO(A) no Exame teórico para a faixa estando apto(a) a ser provido(a) a faixa:"
+        pdf.set_x(x_inicio)
+        # MultiCell para quebrar a linha automaticamente se for muito longa
+        pdf.multi_cell(largura_util, 8, texto_aprovacao, 0, "C") 
         
-        pdf.ln(2)
-        texto_apto = "estando apto(a) a ser provido(a) a faixa:"
-        pdf.cell(largura_util, 10, texto_apto, ln=1, align="C")
+        pdf.ln(15)
 
-        # 5. Faixa (Posição Y ajustável)
-        pdf.set_xy(x_inicio, posicao_y_faixa)
-        
-        # Linha horizontal acima da Faixa
-        largura_linha = 180
-        x_linha = centro_x - (largura_linha / 2)
-        pdf.set_draw_color(*cor_preto)
-        pdf.set_line_width(0.5)
-        pdf.line(x_linha, posicao_y_faixa, x_linha + largura_linha, posicao_y_faixa)
-
-        pdf.set_y(posicao_y_faixa + 5) 
-        
         # Faixa - Em destaque
         pdf.set_font("Helvetica", "B", 32)
-        pdf.set_text_color(*cor_preto)
-        texto_faixa = f"{str(faixa).upper()}"
-        pdf.cell(largura_util, 16, texto_faixa, ln=1, align="C")
+        pdf.set_text_color(*cor_preto_texto)
+        texto_faixa = f"{str(faixa).upper()}" # Usando o valor da variável 'faixa'
         
-        # --- BLOC DA ASSINATURA ---
-        
-        # 6. Assinatura do Professor 
-        if professor:
-            professor_limpo = professor.encode('latin-1', 'replace').decode('latin-1')
-            
-            # Escreve o nome
-            pdf.set_xy(posicao_x_assinatura, posicao_y_assinatura_nome)
-            pdf.set_font(CUSTOM_FONT_NAME, 'I', 20) 
-            pdf.set_text_color(*cor_preto)
-            pdf.cell(0, 10, professor_limpo, ln=1, align="L") 
-            
-            # Linha de assinatura
-            y_assinatura = pdf.get_y() + 2
-            largura_linha_assinatura = 80
-            
-            x_linha_assinatura = posicao_x_assinatura
-            
-            pdf.set_draw_color(*cor_preto)
-            pdf.set_line_width(0.3)
-            pdf.line(x_linha_assinatura, y_assinatura, x_linha_assinatura + largura_linha_assinatura, y_assinatura)
-            
-            # "Professor Responsável"
-            pdf.set_xy(x_linha_assinatura, y_assinatura + 2)
-            pdf.set_font("Helvetica", "", 10)
-            pdf.set_text_color(*cor_cinza)
-            pdf.cell(largura_linha_assinatura, 5, "Professor Responsável", align="C")
+        pdf.set_x(x_inicio)
+        pdf.cell(largura_util, 16, texto_faixa, 0, 1, "C")
 
+        # 4. Rodapé com assinatura
+        y_rodape_linha = 175 # Posição da linha de assinatura
+        
+        pdf.set_y(y_rodape_linha)
+        
+        # Centralização da linha e texto
+        largura_linha_assinatura = 80
+        x_assinatura = centro_x_util - (largura_linha_assinatura / 2) 
+        
+        # Linha da assinatura
+        pdf.set_draw_color(*cor_preto_texto)
+        pdf.set_line_width(0.3)
+        pdf.line(x_assinatura, y_rodape_linha, x_assinatura + largura_linha_assinatura, y_rodape_linha)
+        
+        # Nome do professor (ou placeholder) - Acima da linha na imagem
+        pdf.set_xy(x_assinatura, y_rodape_linha - 12)
+        pdf.set_font("Helvetica", "I", 12)
+        pdf.set_text_color(*cor_preto_texto)
+        pdf.cell(largura_linha_assinatura, 5, professor or "{nome_do_professor}", align="C")
+        
+        # Texto "Professor Responsável" - Abaixo da linha na imagem
+        pdf.set_xy(x_assinatura, y_rodape_linha + 2)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.set_text_color(*cor_cinza)
+        pdf.cell(largura_linha_assinatura, 5, "Professor Responsável", align="C")
+
+        # 5. QR Code e Código de Verificação (Bottom Right)
+        
+        qr_size = 25 # Tamanho do quadrado do QR
+        qr_margin_bottom = 10 
+        qr_margin_right = 10
+        x_qr = 297 - qr_size - qr_margin_right 
+        y_qr = 210 - qr_size - qr_margin_bottom 
+        
+        caminho_qr = gerar_qrcode(codigo)
+        
+        # Adiciona a imagem do QR Code
+        if os.path.exists(caminho_qr):
+            pdf.image(caminho_qr, x=x_qr, y=y_qr, w=qr_size)
+
+        # Texto do Código de Verificação (abaixo do QR)
+        pdf.set_xy(x_qr, y_qr + qr_size + 2)
+        pdf.set_font("Helvetica", "", 8)
+        pdf.set_text_color(*cor_cinza)
+        pdf.cell(qr_size, 4, codigo, align="R") # Alinha à direita
+
+        # Retorna o PDF como bytes
         return pdf.output(dest='S').encode('latin-1'), f"Certificado_{usuario_nome.split()[0]}.pdf"
     except Exception as e:
-        st.error(f"Erro ao gerar PDF: {e}")
+        # Aumentei o print para ver o erro em mais detalhes
+        print(f"Erro ao gerar PDF: {e}")
         return None, None
 
-# --- 2. INTERFACE STREAMLIT (COM ADIÇÃO DA TABELA) ---
+# =========================================
+# 4. EXEMPLO DE EXECUÇÃO
+# =========================================
 
-st.set_page_config(layout="wide", page_title="Editor de Certificado")
-
-st.title("📄 Editor de Certificado FPDF (Streamlit)")
-
-col_config, col_preview = st.columns([1, 2])
-
-# --- CAPTURA DE VARIÁVEIS (COL_CONFIG) ---
-with col_config:
-    st.header("🛠️ Configurações do Certificado")
+if __name__ == "__main__":
+    # Dados de Exemplo
+    NOME_ALUNO = "João Pedro da Silva"
+    FAIXA_ATUAL = "Faixa Azul"
+    PONTUACAO_EXAME = 95
+    TOTAL_PONTOS = 100
+    NOME_PROFESSOR = "Mestre Carlos Gracie Jr."
     
-    st.subheader("Dados Principais")
-    nome_aluno = st.text_input("Nome do Aluno:", "Carlos Alberto da Silva Rocha")
-    faixa_alvo = st.text_input("Faixa a ser conferida:", "Faixa Roxa")
-    professor_nome = st.text_input("Nome para Assinatura:", "M. Kawashima")
+    # Gera o código e o QR Code
+    CODIGO_VERIFICACAO = gerar_codigo_verificacao()
+    print(f"Código de Verificação Gerado: {CODIGO_VERIFICACAO}")
     
-    st.subheader("Ajustes de Design e Coordenadas")
+    # Gera o PDF
+    pdf_bytes, filename = gerar_pdf(
+        usuario_nome=NOME_ALUNO, 
+        faixa=FAIXA_ATUAL, 
+        pontuacao=PONTUACAO_EXAME, 
+        total=TOTAL_PONTOS, 
+        codigo=CODIGO_VERIFICACAO, 
+        professor=NOME_PROFESSOR
+    )
     
-    # Color Picker
-    cor_dourado_hex = st.color_picker("Cor de Destaque (Dourado):", "#B8860B")
-    h = cor_dourado_hex.lstrip('#')
-    cor_dourado_rgb_tuple = tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
-    
-    # Sliders de Layout Geral
-    largura_barra_ajuste = st.slider("Largura da Barra Lateral (mm):", 5, 50, 25)
-    margem_x_conteudo_ajuste = st.slider("Margem X do Conteúdo (mm):", 5, 50, 15, help="Margem horizontal do conteúdo principal.")
-    incluir_logo_check = st.checkbox("Incluir Logo (Requer 'assets/logo.png')", value=False)
-    
-    st.markdown("---")
-    st.subheader("Posicionamento Vertical (Y)")
-    
-    # Y-Coordinates
-    posicao_y_titulo_ajuste = st.slider("Y do Título (mm):", 10, 80, 45)
-    posicao_y_nome_ajuste = st.slider("Y do Bloco 'Nome' (mm):", 50, 100, 70)
-    posicao_y_faixa_ajuste = st.slider("Y do Bloco 'Faixa' (mm):", 100, 160, 120)
-    
-    st.markdown("---")
-    st.subheader("Posicionamento da Assinatura")
-    
-    # X/Y Assinatura
-    posicao_x_assinatura_ajuste = st.slider("X da Assinatura (mm):", 50, 250, 150, help="Posição horizontal (X) do nome do professor.")
-    posicao_y_assinatura_nome_ajuste = st.slider("Y do Nome da Assinatura (mm):", 150, 200, 170)
-    
-    st.markdown("---")
-    st.subheader("Outros Ajustes")
-    
-    # Outros Sliders
-    tamanho_titulo_ajuste = st.slider("Tamanho da Fonte do Título:", 18, 40, 24)
-    espacamento_ajuste = st.slider("Espaçamento Vertical (ln) após Título:", 10, 50, 20)
-
-    
-# --- Geração e Visualização do PDF ---
-pdf_bytes, nome_arquivo = gerar_pdf(
-    usuario_nome=nome_aluno, 
-    faixa=faixa_alvo, 
-    professor=professor_nome,
-    cor_dourado_rgb=cor_dourado_rgb_tuple,
-    largura_barra=largura_barra_ajuste,
-    margem_x_conteudo=margem_x_conteudo_ajuste,
-    tamanho_titulo=tamanho_titulo_ajuste,
-    posicao_y_titulo=posicao_y_titulo_ajuste,
-    posicao_y_nome=posicao_y_nome_ajuste,
-    posicao_y_faixa=posicao_y_faixa_ajuste,
-    posicao_x_assinatura=posicao_x_assinatura_ajuste,
-    posicao_y_assinatura_nome=posicao_y_assinatura_nome_ajuste,
-    espacamento_titulo=espacamento_ajuste,
-    incluir_logo=incluir_logo_check
-)
-
-with col_preview:
-    st.header("✨ Pré-visualização")
-    
+    # Salva o arquivo localmente para visualização (opcional)
     if pdf_bytes:
-        pdf_viewer(
-            input=pdf_bytes,
-            width=700,
-            height=600
-        )
-        
-        st.download_button(
-            label="Baixar PDF Gerado",
-            data=pdf_bytes,
-            file_name=nome_arquivo,
-            mime="application/pdf"
-        )
-    else:
-        st.warning("Não foi possível gerar o PDF. Verifique os logs de erro.")
-
-# --- 3. QUADRO DE COORDENADAS (NOVO) ---
-st.markdown("---")
-st.header("📋 Coordenadas Finais para o Código Python")
-st.info("Use estes valores para fixar o design no seu código de produção (sem o Streamlit). Todos os valores estão em **milímetros (mm)**.")
-
-# Cria um DataFrame com os dados ajustados
-dados_coordenadas = {
-    'Elemento FPDF': ['X do Conteúdo Principal', 'Y do Título', 'Y do Bloco Nome', 'Y do Bloco Faixa', 'X da Assinatura', 'Y da Assinatura'],
-    'Variável Python': ['margem_x_conteudo', 'posicao_y_titulo', 'posicao_y_nome', 'posicao_y_faixa', 'posicao_x_assinatura', 'posicao_y_assinatura_nome'],
-    'Valor (mm)': [
-        margem_x_conteudo_ajuste, 
-        posicao_y_titulo_ajuste, 
-        posicao_y_nome_ajuste, 
-        posicao_y_faixa_ajuste,
-        posicao_x_assinatura_ajuste,
-        posicao_y_assinatura_nome_ajuste
-    ]
-}
-
-df_coordenadas = pd.DataFrame(dados_coordenadas)
-
-# Exibe o DataFrame como uma tabela
-with st.expander("Clique para ver a Tabela de Coordenadas Finais"):
-    st.dataframe(df_coordenadas, use_container_width=True, hide_index=True)
+        with open(filename, "wb") as f:
+            f.write(pdf_bytes)
+        print(f"Certificado gerado com sucesso: {filename}")
+    
+    # Limpa o QR Code temporário
+    try:
+        qr_path = f"temp/qr_{CODIGO_VERIFICACAO}.png"
+        if os.path.exists(qr_path):
+            os.remove(qr_path)
+    except Exception as e:
+        print(f"Não foi possível remover o arquivo QR temporário: {e}")
