@@ -9,7 +9,7 @@ from streamlit_pdf_viewer import pdf_viewer
 # e, idealmente, os arquivos de métrica gerados pelo utilitário FPDF na pasta 'assets/'.
 # Se a fonte Allura não carregar, comente as linhas 'pdf.add_font' e use uma fonte padrão.
 CUSTOM_FONT_NAME = 'Allura'
-CUSTOM_FONT_FILE = 'assets/Allura.ttf' # Substitua pelo nome exato do seu arquivo .ttf
+CUSTOM_FONT_FILE = 'assets/Allura-Regular.ttf' # Substitua pelo nome exato do seu arquivo .ttf
 
 # --- 1. FUNÇÃO DE GERAÇÃO DE PDF ---
 def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, margem_x_conteudo=15, tamanho_titulo=24, posicao_y_titulo=45, posicao_y_nome=70, posicao_y_faixa=120, posicao_x_assinatura=150, posicao_y_assinatura_nome=170, espacamento_titulo=20, incluir_logo=False):
@@ -238,3 +238,4 @@ with col_preview:
         )
     else:
         st.warning("Não foi possível gerar o PDF. Verifique os logs de erro.")
+
