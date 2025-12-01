@@ -3,15 +3,14 @@ from fpdf import FPDF
 import os
 import base64
 from streamlit_pdf_viewer import pdf_viewer
+import pandas as pd # Importação necessária para criar o DataFrame da tabela
 
 # --- CONFIGURAÇÃO DA FONTE ---
-# A fonte customizada (Allura) foi desativada temporariamente para corrigir a falha na pré-visualização.
-# Para reativar, descomente as linhas e certifique-se que Allura.ttf E os arquivos de métrica
-# gerados pelo FPDF (ex: Allura.json) estão na pasta 'assets/'.
-CUSTOM_FONT_NAME = 'Helvetica' # Fonte padrão de fallback
+CUSTOM_FONT_NAME = 'Helvetica'
 CUSTOM_FONT_FILE = 'assets/Allura.ttf' 
 
-# --- 1. FUNÇÃO DE GERAÇÃO DE PDF ---
+# --- 1. FUNÇÃO DE GERAÇÃO DE PDF (SEM ALTERAÇÕES) ---
+# A função é mantida idêntica à última versão corrigida (com Helvetica temporária)
 def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11), largura_barra=25, margem_x_conteudo=15, tamanho_titulo=24, posicao_y_titulo=45, posicao_y_nome=70, posicao_y_faixa=120, posicao_x_assinatura=150, posicao_y_assinatura_nome=170, espacamento_titulo=20, incluir_logo=False):
     
     # Cores
@@ -28,7 +27,6 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
         # 1. Carregar Fonte Customizada (Temporariamente Desativado)
         if os.path.exists(CUSTOM_FONT_FILE):
              try:
-                 # Esta linha costuma falhar se o arquivo de métrica (ex: Allura.json) estiver faltando
                  # pdf.add_font('Allura', '', CUSTOM_FONT_FILE, uni=True) 
                  pass
              except Exception:
@@ -58,7 +56,7 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
         titulo = "CERTIFICADO DE EXAME TEÓRICO DE FAIXA"
         pdf.cell(largura_util, tamanho_titulo / 2, titulo, ln=1, align="C")
         
-        pdf.set_y(pdf.get_y() + espacamento_titulo) # Avança o Y de acordo com o espaçamento
+        pdf.set_y(pdf.get_y() + espacamento_titulo) 
         
         # 4. Bloco de Nome/Texto Introdutório (Posição Y ajustável)
         pdf.set_xy(x_inicio, posicao_y_nome)
@@ -99,7 +97,7 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
         pdf.set_line_width(0.5)
         pdf.line(x_linha, posicao_y_faixa, x_linha + largura_linha, posicao_y_faixa)
 
-        pdf.set_y(posicao_y_faixa + 5) # Espaço de 5mm após a linha
+        pdf.set_y(posicao_y_faixa + 5) 
         
         # Faixa - Em destaque
         pdf.set_font("Helvetica", "B", 32)
@@ -109,13 +107,13 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
         
         # --- BLOC DA ASSINATURA ---
         
-        # 6. Assinatura do Professor (Nome em Helvetica, temporariamente) 
+        # 6. Assinatura do Professor 
         if professor:
             professor_limpo = professor.encode('latin-1', 'replace').decode('latin-1')
             
-            # Escreve o nome com a Fonte padrão para evitar a falha de carregamento da customizada
+            # Escreve o nome
             pdf.set_xy(posicao_x_assinatura, posicao_y_assinatura_nome)
-            pdf.set_font(CUSTOM_FONT_NAME, 'I', 20) # Usando a fonte padrão com itálico para simular a Allura
+            pdf.set_font(CUSTOM_FONT_NAME, 'I', 20) 
             pdf.set_text_color(*cor_preto)
             pdf.cell(0, 10, professor_limpo, ln=1, align="L") 
             
@@ -137,11 +135,10 @@ def gerar_pdf(usuario_nome, faixa, professor=None, cor_dourado_rgb=(184, 134, 11
 
         return pdf.output(dest='S').encode('latin-1'), f"Certificado_{usuario_nome.split()[0]}.pdf"
     except Exception as e:
-        # Se houver outro erro, ele ainda será exibido
         st.error(f"Erro ao gerar PDF: {e}")
         return None, None
 
-# --- 2. INTERFACE STREAMLIT (SEM ALTERAÇÕES) ---
+# --- 2. INTERFACE STREAMLIT (COM ADIÇÃO DA TABELA) ---
 
 st.set_page_config(layout="wide", page_title="Editor de Certificado")
 
@@ -149,11 +146,11 @@ st.title("📄 Editor de Certificado FPDF (Streamlit)")
 
 col_config, col_preview = st.columns([1, 2])
 
+# --- CAPTURA DE VARIÁVEIS (COL_CONFIG) ---
 with col_config:
     st.header("🛠️ Configurações do Certificado")
     
     st.subheader("Dados Principais")
-    # Campos de texto
     nome_aluno = st.text_input("Nome do Aluno:", "Carlos Alberto da Silva Rocha")
     faixa_alvo = st.text_input("Faixa a ser conferida:", "Faixa Roxa")
     professor_nome = st.text_input("Nome para Assinatura:", "M. Kawashima")
@@ -167,7 +164,7 @@ with col_config:
     
     # Sliders de Layout Geral
     largura_barra_ajuste = st.slider("Largura da Barra Lateral (mm):", 5, 50, 25)
-    margem_x_conteudo_ajuste = st.slider("Margem X do Conteúdo (mm):", 5, 50, 15, help="Controla o X de início do bloco de texto após a barra lateral.")
+    margem_x_conteudo_ajuste = st.slider("Margem X do Conteúdo (mm):", 5, 50, 15, help="Margem horizontal do conteúdo principal.")
     incluir_logo_check = st.checkbox("Incluir Logo (Requer 'assets/logo.png')", value=False)
     
     st.markdown("---")
@@ -175,15 +172,15 @@ with col_config:
     
     # Y-Coordinates
     posicao_y_titulo_ajuste = st.slider("Y do Título (mm):", 10, 80, 45)
-    posicao_y_nome_ajuste = st.slider("Y do Bloco 'Nome' (mm):", 50, 100, 70, help="Define o Y inicial para o texto introdutório.")
-    posicao_y_faixa_ajuste = st.slider("Y do Bloco 'Faixa' (mm):", 100, 160, 120, help="Define o Y da linha horizontal acima da Faixa.")
+    posicao_y_nome_ajuste = st.slider("Y do Bloco 'Nome' (mm):", 50, 100, 70)
+    posicao_y_faixa_ajuste = st.slider("Y do Bloco 'Faixa' (mm):", 100, 160, 120)
     
     st.markdown("---")
     st.subheader("Posicionamento da Assinatura")
     
     # X/Y Assinatura
-    posicao_x_assinatura_ajuste = st.slider("X da Assinatura (mm):", 50, 250, 150, help="Define a posição horizontal (X) do nome do professor e da linha.")
-    posicao_y_assinatura_nome_ajuste = st.slider("Y do Nome da Assinatura (mm):", 150, 200, 170, help="Define a posição vertical (Y) do nome do professor.")
+    posicao_x_assinatura_ajuste = st.slider("X da Assinatura (mm):", 50, 250, 150, help="Posição horizontal (X) do nome do professor.")
+    posicao_y_assinatura_nome_ajuste = st.slider("Y do Nome da Assinatura (mm):", 150, 200, 170)
     
     st.markdown("---")
     st.subheader("Outros Ajustes")
@@ -215,14 +212,12 @@ with col_preview:
     st.header("✨ Pré-visualização")
     
     if pdf_bytes:
-        # Usa o componente pdf_viewer para contornar o bloqueio do Chrome
         pdf_viewer(
             input=pdf_bytes,
             width=700,
             height=600
         )
         
-        # Botão de download
         st.download_button(
             label="Baixar PDF Gerado",
             data=pdf_bytes,
@@ -231,3 +226,28 @@ with col_preview:
         )
     else:
         st.warning("Não foi possível gerar o PDF. Verifique os logs de erro.")
+
+# --- 3. QUADRO DE COORDENADAS (NOVO) ---
+st.markdown("---")
+st.header("📋 Coordenadas Finais para o Código Python")
+st.info("Use estes valores para fixar o design no seu código de produção (sem o Streamlit). Todos os valores estão em **milímetros (mm)**.")
+
+# Cria um DataFrame com os dados ajustados
+dados_coordenadas = {
+    'Elemento FPDF': ['X do Conteúdo Principal', 'Y do Título', 'Y do Bloco Nome', 'Y do Bloco Faixa', 'X da Assinatura', 'Y da Assinatura'],
+    'Variável Python': ['margem_x_conteudo', 'posicao_y_titulo', 'posicao_y_nome', 'posicao_y_faixa', 'posicao_x_assinatura', 'posicao_y_assinatura_nome'],
+    'Valor (mm)': [
+        margem_x_conteudo_ajuste, 
+        posicao_y_titulo_ajuste, 
+        posicao_y_nome_ajuste, 
+        posicao_y_faixa_ajuste,
+        posicao_x_assinatura_ajuste,
+        posicao_y_assinatura_nome_ajuste
+    ]
+}
+
+df_coordenadas = pd.DataFrame(dados_coordenadas)
+
+# Exibe o DataFrame como uma tabela
+with st.expander("Clique para ver a Tabela de Coordenadas Finais"):
+    st.dataframe(df_coordenadas, use_container_width=True, hide_index=True)
